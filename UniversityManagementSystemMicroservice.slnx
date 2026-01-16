@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="AcademicService/AcademicService.csproj" />
+  <Project Path="AttendanceService/AttendanceService.csproj" />
+  <Project Path="AuthService/AuthService.csproj" />
+  <Project Path="EmailService/EmailService.csproj" />
+  <Project Path="ExamService/ExamService.csproj" />
+  <Project Path="GradeService/GradeService.csproj" />
+  <Project Path="NotificationService/NotificationService.csproj" />
+  <Project Path="ReportingDashboardService/ReportingDashboardService.csproj" />
+</Solution>
