@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="AcademicService/AcademicService.csproj" />
+  <Project Path="API Gateway/API Gateway.csproj" />
   <Project Path="AttendanceService/AttendanceService.csproj" />
   <Project Path="AuthService/AuthService.csproj" />
   <Project Path="EmailService/EmailService.csproj" />
