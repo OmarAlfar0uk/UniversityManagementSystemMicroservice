@@ -16,6 +16,7 @@ namespace AuthService.Data
         public DbSet<ActivationCode> ActivationCodes { get; set; }
         public DbSet<ParentCode> ParentCodes { get; set; }
         public DbSet<ParentStudent> ParentStudents { get; set; }
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

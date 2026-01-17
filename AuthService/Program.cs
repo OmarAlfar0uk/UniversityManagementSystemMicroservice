@@ -1,15 +1,12 @@
 ﻿using Auth.Behaviors;
 using Auth.Contarcts;
 using Auth.Data.Seeding;
-using Auth.Features.Auth.ChangePassword;
-using Auth.Features.Auth.Logout;
-using Auth.Features.Auth.Register;
-using Auth.Features.Auth.UpdateUserProfile;
 using Auth.Models;
 using Auth.Repositories;
 using Auth.Services;
 using AuthService.Data;
 using AuthService.Features.Auth;
+using AuthService.Features.Extensions;
 using AuthService.Seeding;
 using FluentValidation;
 using MediatR;
@@ -21,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using System.Reflection;
 using System.Text;
 
@@ -31,6 +29,20 @@ namespace Auth_Service
     {
         public static async Task Main(string[] args)
         {
+            #region Serilog
+            Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .WriteTo.File(
+                path: "Logs/log-.txt",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7,
+                shared: true)
+            .CreateLogger();
+            #endregion
+
             var builder = WebApplication.CreateBuilder(args);
 
             #region --- Services ---
@@ -67,6 +79,7 @@ namespace Auth_Service
             builder.Services.AddDbContext<UniversitySystemAuthContext>(options =>
                 options.UseSqlServer(connectionString));
             #endregion
+
                  #region Identity
             builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
@@ -88,6 +101,7 @@ namespace Auth_Service
               .AddEntityFrameworkStores<UniversitySystemAuthContext>()
               .AddDefaultTokenProviders();
             #endregion
+
                  #region JWT Configuration
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
@@ -127,18 +141,13 @@ namespace Auth_Service
 
                  #region DI Registrations
             builder.Services.AddScoped<IImageHelper, ImageHelper>();
-            builder.Services.AddScoped<UpdateUserProfileOrchestrator>();
-            //builder.Services.AddScoped<LoginHandler>();
-            //builder.Services.AddScoped<RegisterHandler>();
-            builder.Services.AddScoped<ChangePasswordHandler>();
-
-            builder.Services.AddScoped<LogoutHandler>();
-
+            builder.Host.UseSerilog();
+            builder.Services.AddAuditLogging();
+            builder.Services.AddCustomRateLimiting();
             builder.Services.AddScoped<ITokenService, JwtService>();
             builder.Services.AddScoped<IMailKitEmailService, MailKitEmailService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
-            builder.Services.AddValidatorsFromAssemblyContaining<RegisterCommandValidator>();
             builder.Services.AddTransient(
             typeof(IPipelineBehavior<,>),
             typeof(ValidationBehavior<,>)
@@ -146,11 +155,13 @@ namespace Auth_Service
             #endregion
 
 
-                 #region Caching
+            #region Caching
             builder.Services.AddMemoryCache();
+            builder.Services.AddHttpContextAccessor();
+
             #endregion
 
-        #endregion
+            #endregion
 
             var app = builder.Build();
 
@@ -198,7 +209,7 @@ namespace Auth_Service
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseRateLimiter();
             app.MapControllers();
             app.MapGet("/", () => "Auth Service is running...");
             app.MapAuthEndpoints();
