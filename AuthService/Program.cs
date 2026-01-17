@@ -2,7 +2,6 @@
 using Auth.Contarcts;
 using Auth.Data.Seeding;
 using Auth.Features.Auth.ChangePassword;
-using Auth.Features.Auth.Login;
 using Auth.Features.Auth.Logout;
 using Auth.Features.Auth.Register;
 using Auth.Features.Auth.UpdateUserProfile;
@@ -10,6 +9,7 @@ using Auth.Models;
 using Auth.Repositories;
 using Auth.Services;
 using AuthService.Data;
+using AuthService.Features.Auth;
 using AuthService.Seeding;
 using FluentValidation;
 using MediatR;
@@ -201,6 +201,7 @@ namespace Auth_Service
 
             app.MapControllers();
             app.MapGet("/", () => "Auth Service is running...");
+            app.MapAuthEndpoints();
             #endregion
 
 
