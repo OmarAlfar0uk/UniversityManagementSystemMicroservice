@@ -1,34 +1,44 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Identity;
-using Auth.Contarcts;
+﻿using Auth.Contarcts;
 using Auth.Models;
+using Auth_Service.Features.Shared;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
-namespace Auth.Features.Auth.Logout
+namespace AuthService.Features.Auth.Logout
 {
-    public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResponse>
+    public class LogoutHandler : IRequestHandler<LogoutCommand, EndpointResponse<string>>
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
 
-        public LogoutHandler(UserManager<ApplicationUser> userManager, ITokenService tokenService)
+        public LogoutHandler(
+            UserManager<ApplicationUser> userManager,
+            ITokenService tokenService)
         {
             _userManager = userManager;
             _tokenService = tokenService;
         }
 
-        public async Task<LogoutResponse> Handle(LogoutCommand request, CancellationToken cancellationToken)
+        public async Task<EndpointResponse<string>> Handle(
+            LogoutCommand request,
+            CancellationToken cancellationToken)
         {
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            var user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken, cancellationToken);
+
             if (user == null)
-                throw new KeyNotFoundException("User not found.");
+            {
+                return EndpointResponse<string>.UnauthorizedResponse(
+                    "Invalid refresh token");
+            }
 
             await _tokenService.RevokeRefreshTokenAsync(user);
 
-            return new LogoutResponse
-            {
-                Success = true,
-                Message = "Logout successful. Refresh token revoked."
-            };
+            return EndpointResponse<string>.SuccessResponse(
+                "Logged out successfully",
+                "Logout successful"
+            );
         }
     }
 }

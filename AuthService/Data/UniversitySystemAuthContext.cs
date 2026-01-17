@@ -1,4 +1,5 @@
 ﻿using Auth.Models;
+using AuthService.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,10 @@ namespace AuthService.Data
             : base(options)
         {
         }
+        public DbSet<ActivationCode> ActivationCodes { get; set; }
+        public DbSet<ParentCode> ParentCodes { get; set; }
+        public DbSet<ParentStudent> ParentStudents { get; set; }
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

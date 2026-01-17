@@ -1,9 +1,9 @@
-﻿namespace AuthService.Features.Auth.Login
+﻿namespace AuthService.Features.Auth.Activate
 {
-    public class LoginResponse
+    public class ActivateResponse
     {
         public string AccessToken { get; set; } = default!;
         public string RefreshToken { get; set; } = default!;
-        public List<string> Roles { get; set; } = new();
+        public string Role { get; set; } = default!;
     }
 }
