@@ -1,25 +1,45 @@
-﻿  using global::Auth.Models;
-  using Microsoft.EntityFrameworkCore;
-  using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using Auth.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-    namespace Auth.Data.Configurations
+namespace Auth.Data.Configurations
+{
+    public class ApplicationUserConfig : IEntityTypeConfiguration<ApplicationUser>
     {
-        public class ApplicationUserConfig : IEntityTypeConfiguration<ApplicationUser>
+        public void Configure(EntityTypeBuilder<ApplicationUser> builder)
         {
-            public void Configure(EntityTypeBuilder<ApplicationUser> builder)
-            {
-                builder.Property(u => u.FullName)
-                    .IsRequired()
-                    .HasMaxLength(150);
-                
-                builder.Property(u => u.FullName)
-                        .HasMaxLength(150)
-                        .HasComputedColumnSql("[FirstName] + ' ' + [LastName]");
-            
+          
+            builder.Property(u => u.FirstName)
+                   .IsRequired()
+                   .HasMaxLength(50);
 
-              
-            }
+            builder.Property(u => u.LastName)
+                   .IsRequired()
+                   .HasMaxLength(50);
+
+            builder.Property(u => u.ProfileImageUrl)
+                   .HasMaxLength(300);
+
+            builder.Property(u => u.IsActivated)
+                   .IsRequired();
+
+            builder.Property(u => u.CreatedAt)
+                   .IsRequired();
+
+            builder.Property(u => u.LastLoginAt);
+
+            builder.Property(u => u.DateOfBirth);
+
+            builder.Property(u => u.Gender)
+                   .HasConversion<string>()   
+                   .HasMaxLength(10);
+
+            builder.Property(u => u.RefreshToken)
+                   .HasMaxLength(500);
+
+            builder.Property(u => u.RefreshTokenExpiryTime);
+
+            builder.Ignore(u => u.FullName);
         }
     }
-
-
+}

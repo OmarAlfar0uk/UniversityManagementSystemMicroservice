@@ -1,6 +1,6 @@
 ﻿using Auth.Behaviors;
 using Auth.Contarcts;
-using Auth.Data.Seed;
+using Auth.Data.Seeding;
 using Auth.Features.Auth.ChangePassword;
 using Auth.Features.Auth.Login;
 using Auth.Features.Auth.Logout;
@@ -10,6 +10,7 @@ using Auth.Models;
 using Auth.Repositories;
 using Auth.Services;
 using AuthService.Data;
+using AuthService.Seeding;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -32,11 +33,11 @@ namespace Auth_Service
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // --- Services ---
+            #region --- Services ---
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
-            // Swagger Configuration
+                 #region Swagger Configuration
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Auth API", Version = "v1" });
@@ -59,25 +60,35 @@ namespace Auth_Service
                     }
                 });
             });
+            #endregion
 
-            // Database
+                 #region Database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<UniversitySystemAuthContext>(options =>
                 options.UseSqlServer(connectionString));
-
-            // Identity
-            builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+            #endregion
+                 #region Identity
+            builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
+                // Password
                 options.Password.RequireDigit = false;
                 options.Password.RequiredLength = 6;
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireLowercase = false;
-            })
-            .AddEntityFrameworkStores<UniversitySystemAuthContext>()
-            .AddDefaultTokenProviders();
 
-            // JWT Configuration
+                // User
+                options.User.RequireUniqueEmail = false;
+
+                // Lockout
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+                options.Lockout.AllowedForNewUsers = true;
+            })
+              .AddEntityFrameworkStores<UniversitySystemAuthContext>()
+              .AddDefaultTokenProviders();
+            #endregion
+                 #region JWT Configuration
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
 
@@ -101,8 +112,9 @@ namespace Auth_Service
             });
 
             builder.Services.AddAuthorization();
+            #endregion
 
-            // CORS
+                 #region CORS
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", builder => builder
@@ -111,12 +123,13 @@ namespace Auth_Service
                     .SetIsOriginAllowed(origin => true)
                     .AllowCredentials());
             });
+            #endregion
 
-            // DI Registrations
+                 #region DI Registrations
             builder.Services.AddScoped<IImageHelper, ImageHelper>();
             builder.Services.AddScoped<UpdateUserProfileOrchestrator>();
-            builder.Services.AddScoped<LoginHandler>();
-            builder.Services.AddScoped<RegisterHandler>();
+            //builder.Services.AddScoped<LoginHandler>();
+            //builder.Services.AddScoped<RegisterHandler>();
             builder.Services.AddScoped<ChangePasswordHandler>();
 
             builder.Services.AddScoped<LogoutHandler>();
@@ -130,34 +143,49 @@ namespace Auth_Service
             typeof(IPipelineBehavior<,>),
             typeof(ValidationBehavior<,>)
             );
+            #endregion
 
-            // Caching
+
+                 #region Caching
             builder.Services.AddMemoryCache();
+            #endregion
+
+        #endregion
 
             var app = builder.Build();
 
-            // --- Migration & Seeding ---
+            #region --- Migration & Seeding ---
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+
                 try
                 {
                     Console.WriteLine("📊 [Auth] Starting database migration...");
+
                     var context = services.GetRequiredService<UniversitySystemAuthContext>();
                     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-                    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+                    var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
                     await context.Database.MigrateAsync();
-                    await IdentitySeeder.SeedIdentityAsync(roleManager, userManager);
+
+                    await RoleSeeder.SeedRolesAsync(roleManager);
+
+                    await SuperAdminSeeder.SeedSuperAdminAsync(userManager);
+
                     Console.WriteLine("✅ [Auth] Database migration & seeding completed.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ [Auth] Error seeding data: {ex.Message}");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"❌ [Auth] Error during migration/seeding: {ex.Message}");
+                    Console.ResetColor();
                 }
             }
 
-            // --- Pipeline ---
+            #endregion
+
+            #region --- Pipeline ---
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -173,6 +201,9 @@ namespace Auth_Service
 
             app.MapControllers();
             app.MapGet("/", () => "Auth Service is running...");
+            #endregion
+
+
             await app.RunAsync();
         }
     }

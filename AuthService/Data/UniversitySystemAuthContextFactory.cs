@@ -9,7 +9,7 @@ namespace AuthService.Data
         {
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory()) // path للـ project root
-                .AddJsonFile("appsettings.json")             // جلب الـ connection string
+                .AddJsonFile("appsettings.json", optional: false)// جلب الـ connection string
                 .Build();
 
             var optionsBuilder = new DbContextOptionsBuilder<UniversitySystemAuthContext>();
