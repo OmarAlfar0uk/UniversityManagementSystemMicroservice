@@ -1,6 +1,7 @@
 ﻿using AuthService.Contracts;
 using AuthService.Data;
 using AuthService.Models;
+using Serilog;
 using System.Security.Claims;
 
 namespace AuthService.Services
@@ -19,32 +20,46 @@ namespace AuthService.Services
         }
 
         public async Task LogAsync(
-            string action,
-            string? userId = null,
-            string? targetId = null,
-            string? description = null)
+       string action,
+       string? userId = null,
+       string? targetId = null,
+       string? description = null)
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-
-            var actorId =
-                userId ??
-                httpContext?.User.FindFirstValue("id");
-
-            var ip =
-                httpContext?.Connection.RemoteIpAddress?.ToString();
-
-            var log = new AuditLog
+            try
             {
-                Id = Guid.NewGuid(),
-                Action = action,
-                UserId = actorId,
-                TargetId = targetId,
-                Description = description,
-                IpAddress = ip
-            };
+                var httpContext = _httpContextAccessor.HttpContext;
 
-            _context.AuditLogs.Add(log);
-            await _context.SaveChangesAsync();
+                var actorId =
+                    userId ??
+                    httpContext?.User.FindFirstValue("id");
+
+                var ip =
+                    httpContext?.Connection.RemoteIpAddress?.ToString();
+
+                var log = new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    Action = action,
+                    UserId = actorId,
+                    TargetId = targetId,
+                    Description = description,
+                    IpAddress = ip
+                };
+
+                _context.AuditLogs.Add(log);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(
+                    ex,
+                    "AuditLog failed | Action={Action} | UserId={UserId} | TargetId={TargetId}",
+                    action,
+                    userId,
+                    targetId
+                );
+            }
         }
+
     }
 }

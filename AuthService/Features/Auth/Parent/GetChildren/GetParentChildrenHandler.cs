@@ -35,17 +35,17 @@ namespace AuthService.Features.Auth.Parent.GetChildren
 
             var parentId = Guid.Parse(parentIdClaim);
 
-            // 2️⃣ Get children
             var children = await _context.ParentStudents
-                .Where(x => x.ParentId == parentId)
-                .Include(x => x.Student)
-                .Select(x => new ParentChildDto
-                {
-                    StudentId = x.Student.Id,
-                    FullName = x.Student.FullName,
-                    Email = x.Student.Email
-                })
-                .ToListAsync(cancellationToken);
+              .AsNoTracking()
+              .Where(x => x.ParentId == parentId)
+              .Select(x => new ParentChildDto
+              {
+                  StudentId = x.Student.Id,
+                  FullName = x.Student.FullName,
+                  Email = x.Student.Email
+              })
+              .ToListAsync(cancellationToken);
+
 
             return EndpointResponse<List<ParentChildDto>>.SuccessResponse(
                 children,
