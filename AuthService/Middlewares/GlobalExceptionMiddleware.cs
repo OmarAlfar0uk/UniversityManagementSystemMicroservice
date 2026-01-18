@@ -25,7 +25,11 @@ namespace Auth.Middlewares
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception occurred");
+                _logger.LogError(ex,
+                    "Exception | Path: {Path} | Method: {Method}",
+                    context.Request.Path,
+                    context.Request.Method);
+
 
                 context.Response.ContentType = "application/json";
                 var statusCode = HttpStatusCode.InternalServerError;
