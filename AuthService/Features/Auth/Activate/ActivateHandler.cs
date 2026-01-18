@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Serilog;
 
 namespace AuthService.Features.Auth.Activate
 {
@@ -14,14 +15,14 @@ namespace AuthService.Features.Auth.Activate
     {
         private readonly UniversitySystemAuthContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IMemoryCache? _cache;
+        private readonly IMemoryCache _cache;
         private readonly ITokenService _tokenService;
 
         public ActivateHandler(
             UniversitySystemAuthContext context,
             UserManager<ApplicationUser> userManager,
             ITokenService tokenService,
-              IMemoryCache? cache = null)
+            IMemoryCache cache)
         {
             _context = context;
             _userManager = userManager;
@@ -33,6 +34,7 @@ namespace AuthService.Features.Auth.Activate
             ActivateCommand request,
             CancellationToken cancellationToken)
         {
+            // 1️⃣ Validate activation code
             var activationCode = await _context.ActivationCodes
                 .FirstOrDefaultAsync(x =>
                     x.Code == request.Code &&
@@ -42,55 +44,87 @@ namespace AuthService.Features.Auth.Activate
 
             if (activationCode == null)
             {
-                return EndpointResponse<ActivateResponse>.NotFoundResponse(
-                    "Invalid or expired activation code");
+                return EndpointResponse<ActivateResponse>
+                    .NotFoundResponse("Invalid or expired activation code");
             }
 
-            
+            // 2️⃣ Get user
             var user = await _userManager.FindByIdAsync(activationCode.UserId.ToString());
             if (user == null)
             {
-                return EndpointResponse<ActivateResponse>.NotFoundResponse(
-                    "User not found");
+                return EndpointResponse<ActivateResponse>
+                    .NotFoundResponse("User not found");
             }
 
             if (user.IsActivated)
             {
-                return EndpointResponse<ActivateResponse>.ErrorResponse(
-                    "Account already activated", 409);
+                return EndpointResponse<ActivateResponse>
+                    .ErrorResponse("Account already activated", 409);
             }
 
-            var passwordResult = await _userManager.AddPasswordAsync(user, request.Password);
-            if (!passwordResult.Succeeded)
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            try
             {
-                return EndpointResponse<ActivateResponse>.ErrorResponse(
-                    "Failed to set password",
-                    400,
-                    passwordResult.Errors.Select(e => e.Description).ToList()
+                // 3️⃣ Set password
+                var passwordResult =
+                    await _userManager.AddPasswordAsync(user, request.Password);
+
+                if (!passwordResult.Succeeded)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+
+                    return EndpointResponse<ActivateResponse>.ErrorResponse(
+                        "Failed to set password",
+                        400,
+                        passwordResult.Errors.Select(e => e.Description).ToList()
+                    );
+                }
+
+                // 4️⃣ Activate user
+                user.IsActivated = true;
+
+                // 5️⃣ Assign role (only if not exists)
+                if (!await _userManager.IsInRoleAsync(user, activationCode.Role))
+                {
+                    await _userManager.AddToRoleAsync(user, activationCode.Role);
+                }
+
+                // 6️⃣ Invalidate role cache
+                _cache.Remove($"roles_{user.Id}");
+
+                // 7️⃣ Mark code as used
+                activationCode.IsUsed = true;
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                // 8️⃣ Generate tokens
+                var (accessToken, refreshToken) =
+                    await _tokenService.GenerateTokensAsync(user, rememberMe: false);
+
+                return EndpointResponse<ActivateResponse>.SuccessResponse(
+                    new ActivateResponse
+                    {
+                        AccessToken = accessToken,
+                        RefreshToken = refreshToken,
+                        Role = activationCode.Role
+                    },
+                    "Account activated successfully"
                 );
             }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
 
-            user.IsActivated = true;
+                Log.Error(ex, "Activation failed for Code={Code}", request.Code);
 
-            await _userManager.AddToRoleAsync(user, activationCode.Role);
-            _cache.Remove($"roles_{user.Id}");
-
-            activationCode.IsUsed = true;
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(user, rememberMe: false);
-
-            return EndpointResponse<ActivateResponse>.SuccessResponse(
-                new ActivateResponse
-                {
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken,
-                    Role = activationCode.Role
-                },
-                "Account activated successfully"
-            );
-
+                return EndpointResponse<ActivateResponse>.ErrorResponse(
+                    "Unexpected error occurred during activation",
+                    500
+                );
+            }
         }
     }
 }

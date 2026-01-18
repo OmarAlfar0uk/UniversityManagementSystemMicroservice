@@ -27,7 +27,7 @@ namespace AuthService.Data.Configurations
             builder.HasOne<ApplicationUser>()
                    .WithMany()
                    .HasForeignKey(x => x.StudentId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

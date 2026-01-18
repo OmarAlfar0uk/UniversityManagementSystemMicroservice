@@ -4,10 +4,12 @@ using Auth.Data.Seeding;
 using Auth.Models;
 using Auth.Repositories;
 using Auth.Services;
+using AuthService.Contracts;
 using AuthService.Data;
 using AuthService.Features.Auth;
 using AuthService.Features.Extensions;
 using AuthService.Seeding;
+using AuthService.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -35,6 +37,11 @@ namespace Auth_Service
             .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .WriteTo.Console()
+            .WriteTo.Console(
+            outputTemplate:
+            "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}"
+               )
+
             .WriteTo.File(
                 path: "Logs/log-.txt",
                 rollingInterval: RollingInterval.Day,
@@ -143,6 +150,7 @@ namespace Auth_Service
             builder.Services.AddScoped<IImageHelper, ImageHelper>();
             builder.Host.UseSerilog();
             builder.Services.AddAuditLogging();
+            builder.Services.AddScoped<IAuditLogger, AuditLogger>();
             builder.Services.AddCustomRateLimiting();
             builder.Services.AddScoped<ITokenService, JwtService>();
             builder.Services.AddScoped<IMailKitEmailService, MailKitEmailService>();
@@ -178,11 +186,14 @@ namespace Auth_Service
                     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
                     var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
+                    // 1️⃣ Apply migrations
                     await context.Database.MigrateAsync();
 
+                    // 2️⃣ Seed roles
                     await RoleSeeder.SeedRolesAsync(roleManager);
 
-                    await SuperAdminSeeder.SeedSuperAdminAsync(userManager);
+                    // 3️⃣ Seed SuperAdmin (depends on roles)
+                    await SuperAdminSeeder.SeedSuperAdminAsync(userManager, roleManager);
 
                     Console.WriteLine("✅ [Auth] Database migration & seeding completed.");
                 }
@@ -193,6 +204,7 @@ namespace Auth_Service
                     Console.ResetColor();
                 }
             }
+
 
             #endregion
 
@@ -207,6 +219,7 @@ namespace Auth_Service
 
             app.UseCors("AllowAll"); // CORS first
 
+            app.UseMiddleware<AuthService.Middlewares.CorrelationIdMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseRateLimiter();

@@ -2,6 +2,8 @@
 using AuthService.Features.Auth.Activate;
 using AuthService.Features.Auth.Admin.ChangeRole;
 using AuthService.Features.Auth.Admin.Create;
+using AuthService.Features.Auth.Admin.CreateDoctor;
+using AuthService.Features.Auth.Admin.CreateStudent;
 using AuthService.Features.Auth.Admin.GetUsers;
 using AuthService.Features.Auth.Admin.ToggleUserStatus;
 using AuthService.Features.Auth.Login;
@@ -46,6 +48,14 @@ namespace AuthService.Features.Auth
                  .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"));
             group.MapPut("/admin/users/{userId:guid}/toggle-status", ToggleUserStatus)
                   .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"));
+            group.MapPost("/admin/students", CreateStudent)
+                 .WithTags("Admin – Students")
+                .RequireAuthorization(policy =>
+                    policy.RequireRole("Admin", "SuperAdmin"));
+            group.MapPost("/admin/doctors", CreateDoctor)
+                 .WithTags("Admin – Doctors")
+                .RequireAuthorization(policy =>
+                    policy.RequireRole("Admin", "SuperAdmin"));
 
             return app;
         }
@@ -147,5 +157,21 @@ namespace AuthService.Features.Auth
             return result.ToHttpResult();
         }
 
+        private static async Task<IResult> CreateStudent(
+           CreateStudentCommand command,
+           IMediator mediator)
+        {
+            var result = await mediator.Send(command);
+            return result.ToHttpResult();
+        }
+
+
+        private static async Task<IResult> CreateDoctor(
+           CreateDoctorCommand command,
+           IMediator mediator)
+        {
+            var result = await mediator.Send(command);
+            return result.ToHttpResult();
+        }
     }
 }

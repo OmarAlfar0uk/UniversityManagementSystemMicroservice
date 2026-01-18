@@ -6,28 +6,52 @@ namespace AuthService.Seeding
 {
     public static class SuperAdminSeeder
     {
-        public static async Task SeedSuperAdminAsync(UserManager<ApplicationUser> userManager)
-        {   
-            var superAdminUserName = "SuperAdmin";
+        public static async Task SeedSuperAdminAsync(
+            UserManager<ApplicationUser> userManager,
+            RoleManager<ApplicationRole> roleManager)
+        {
+            const string roleName = "SuperAdmin";
+            const string email = "superadmin@university.com";
+            const string password = "SuperAdmin@123";
 
-            var existingUser = await userManager.FindByNameAsync(superAdminUserName);
-            if (existingUser != null) return;
+            // 1️⃣ Ensure role exists
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                await roleManager.CreateAsync(new ApplicationRole
+                {
+                    Name = roleName,
+                    Description = "System Owner"
+                });
+            }
 
+            // 2️⃣ Check if user exists
+            var existingUser = await userManager.FindByEmailAsync(email);
+            if (existingUser != null)
+                return;
+
+            // 3️⃣ Create SuperAdmin
             var user = new ApplicationUser
             {
-                UserName = superAdminUserName,
+                UserName = email,
+                Email = email,
                 FirstName = "Omar",
                 LastName = "Alfarouk",
+                Gender = Gender.Male,
                 IsActivated = true,
-                Gender = Gender.Male
+                EmailConfirmed = true
             };
 
-            var result = await userManager.CreateAsync(user, "SuperAdmin@123");
+            var result = await userManager.CreateAsync(user, password);
 
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                await userManager.AddToRoleAsync(user, "SuperAdmin");
+                throw new Exception(
+                    $"Failed to create SuperAdmin: {string.Join(", ", result.Errors.Select(e => e.Description))}"
+                );
             }
+
+            // 4️⃣ Assign role
+            await userManager.AddToRoleAsync(user, roleName);
         }
     }
 }
