@@ -11,6 +11,7 @@ using AuthService.Features.Extensions;
 using AuthService.Seeding;
 using AuthService.Services;
 using FluentValidation;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -160,6 +161,22 @@ namespace Auth_Service
             typeof(IPipelineBehavior<,>),
             typeof(ValidationBehavior<,>)
             );
+
+            #region massTransit with RabbitMQ
+            builder.Services.AddMassTransit(x =>
+            {
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    cfg.Host("localhost", "/", h =>
+                    {
+                        h.Username("guest");
+                        h.Password("guest");
+                    });
+                });
+            });
+            #endregion
+
+
             #endregion
 
 

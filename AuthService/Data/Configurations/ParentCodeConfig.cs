@@ -32,11 +32,10 @@ namespace AuthService.Data.Configurations
             builder.Property(x => x.IsDeleted)
                    .IsRequired();
 
-            // Relation مع Student
             builder.HasOne<ApplicationUser>()
                    .WithMany()
                    .HasForeignKey(x => x.StudentId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

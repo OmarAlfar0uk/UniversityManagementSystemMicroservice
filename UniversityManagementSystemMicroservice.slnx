@@ -1,9 +1,11 @@
 <Solution>
+  <Folder Name="/Shared/">
+    <Project Path="Shered/Shered.csproj" Id="8e813fbd-88c1-4ad9-a6ad-95d07c03639a" />
+  </Folder>
   <Project Path="AcademicService/AcademicService.csproj" />
   <Project Path="API Gateway/API Gateway.csproj" />
   <Project Path="AttendanceService/AttendanceService.csproj" />
   <Project Path="AuthService/AuthService.csproj" />
-  <Project Path="EmailService/EmailService.csproj" />
   <Project Path="ExamService/ExamService.csproj" />
   <Project Path="GradeService/GradeService.csproj" />
   <Project Path="NotificationService/NotificationService.csproj" />

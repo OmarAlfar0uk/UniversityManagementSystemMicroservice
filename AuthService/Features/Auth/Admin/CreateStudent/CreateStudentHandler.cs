@@ -3,6 +3,7 @@ using Auth_Service.Features.Shared;
 using AuthService.Contracts;
 using AuthService.Data;
 using AuthService.Models;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,15 +17,19 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly UniversitySystemAuthContext _context;
         private readonly IAuditLogger _auditLogger;
+        private readonly IPublishEndpoint _publishEndpoint;
+
 
         public CreateStudentHandler(
-            UserManager<ApplicationUser> userManager,
-            UniversitySystemAuthContext context,
-            IAuditLogger auditLogger)
+       UserManager<ApplicationUser> userManager,
+       UniversitySystemAuthContext context,
+       IAuditLogger auditLogger,
+       IPublishEndpoint publishEndpoint)
         {
             _userManager = userManager;
             _context = context;
             _auditLogger = auditLogger;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<EndpointResponse<CreateStudentResponse>> Handle(
@@ -104,6 +109,15 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
 
                 // 5️⃣ Commit transaction
                 await transaction.CommitAsync(cancellationToken);
+
+                await _publishEndpoint.Publish<IAuthCreated>(new
+                {
+                    UserId = student.Id,
+                    Email = student.Email!,
+                    UserName = student.UserName!,
+                    Role = "Student",
+                    CreatedAt = DateTime.UtcNow
+                });
 
                 // 6️⃣ Audit log (outside transaction)
                 await _auditLogger.LogAsync(

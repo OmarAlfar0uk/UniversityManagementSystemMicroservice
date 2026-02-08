@@ -13,21 +13,16 @@ namespace AuthService.Data.Configurations
 
             builder.HasKey(x => new { x.ParentId, x.StudentId });
 
-            builder.Property(x => x.ParentId)
-                   .IsRequired();
-
-            builder.Property(x => x.StudentId)
-                   .IsRequired();
-
-            builder.HasOne<ApplicationUser>()
+            builder.HasOne(x => x.Parent)
                    .WithMany()
                    .HasForeignKey(x => x.ParentId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne<ApplicationUser>()
+            builder.HasOne(x => x.Student)
                    .WithMany()
                    .HasForeignKey(x => x.StudentId)
                    .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }
