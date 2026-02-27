@@ -1,67 +1,55 @@
 ﻿using Auth_Service.Features.Shared;
 using AuthService.Features.Auth.Activate;
-using AuthService.Features.Auth.Admin.ChangeRole;
-using AuthService.Features.Auth.Admin.Create;
-using AuthService.Features.Auth.Admin.CreateDoctor;
-using AuthService.Features.Auth.Admin.CreateStudent;
-using AuthService.Features.Auth.Admin.GetUsers;
-using AuthService.Features.Auth.Admin.ToggleUserStatus;
 using AuthService.Features.Auth.Login;
 using AuthService.Features.Auth.Logout;
-using AuthService.Features.Auth.Parent.ActivateParent;
-using AuthService.Features.Auth.Parent.GenerateCode;
-using AuthService.Features.Auth.Parent.GetChildren;
 using AuthService.Features.Auth.Refresh;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 namespace AuthService.Features.Auth
 {
+    /// <summary>
+    /// Shared / public Auth endpoints (no role required).
+    /// Base route: /api/v1/auth
+    ///
+    /// Role-specific endpoints live in their own files:
+    ///   → Admin:   Features/Auth/Admin/AdminEndpoints.cs   (MapAdminAuthEndpoints)
+    ///   → Parent:  Features/Auth/Parent/ParentEndpoints.cs (MapParentAuthEndpoints)
+    ///   → Student: Features/Auth/Student/StudentEndpoints.cs (MapStudentAuthEndpoints)
+    /// </summary>
     public static class Endpoints
     {
         public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app)
         {
             var group = app.MapGroup("/api/v1/auth")
-                           .WithTags("Auth");
+                           .WithTags("Auth – Shared");
 
+            // POST /api/v1/auth/activate
             group.MapPost("/activate", Activate)
-                 .RequireRateLimiting("activate");
+                 .RequireRateLimiting("activate")
+                 .WithSummary("Activate a user account")
+                 .WithDescription("Activates a user account using the one-time code received by email.");
+
+            // POST /api/v1/auth/login
             group.MapPost("/login", Login)
-                .RequireRateLimiting("login");
-            group.MapPost("/refresh", Refresh);
-            group.MapPost("/logout", Logout);
-            group.MapPost("/parent/activate", ActivateParent)
-                .RequireRateLimiting("activate");
-            group.MapPost("/parent/generate-code", GenerateParentCode)
-                 .RequireAuthorization()
-                 .RequireAuthorization(policy => policy.RequireRole("Student"))
-                  .RequireRateLimiting("parent-generate");
-            group.MapGet("/parent/children", GetParentChildren)
-                 .RequireAuthorization()
-                 .RequireAuthorization(policy => policy.RequireRole("Parent"));
-            group.MapPost("/admin/create", CreateAdmin)
-                 .RequireAuthorization(policy => policy.RequireRole("SuperAdmin"));
-            group.MapPut("/admin/change-role", ChangeUserRole)
-                 .RequireAuthorization(policy => policy.RequireRole("SuperAdmin"));
-            group.MapGet("/admin/users", GetUsers)
-                 .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"));
-            group.MapPut("/admin/users/{userId:guid}/toggle-status", ToggleUserStatus)
-                  .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"));
-            group.MapPost("/admin/students", CreateStudent)
-                 .WithTags("Admin – Students")
-                .RequireAuthorization(policy =>
-                    policy.RequireRole("Admin", "SuperAdmin"));
-            group.MapPost("/admin/doctors", CreateDoctor)
-                 .WithTags("Admin – Doctors")
-                .RequireAuthorization(policy =>
-                    policy.RequireRole("Admin", "SuperAdmin"));
+                 .RequireRateLimiting("login")
+                 .WithSummary("Login")
+                 .WithDescription("Authenticates a user and returns JWT access + refresh tokens.");
+
+            // POST /api/v1/auth/refresh
+            group.MapPost("/refresh", Refresh)
+                 .WithSummary("Refresh access token")
+                 .WithDescription("Issues a new access token using a valid refresh token.");
+
+            // POST /api/v1/auth/logout
+            group.MapPost("/logout", Logout)
+                 .WithSummary("Logout")
+                 .WithDescription("Revokes the current refresh token.");
 
             return app;
         }
 
-        public static IResult ToHttpResult<T>(this EndpointResponse<T> response)
-            => Results.Json(response, statusCode: response.StatusCode);
+        // ── Handlers (ToHttpResult is in Auth_Service.Features.Shared) ──────────
 
         private static async Task<IResult> Activate(
             ActivateCommand command,
@@ -80,95 +68,16 @@ namespace AuthService.Features.Auth
         }
 
         private static async Task<IResult> Refresh(
-         RefreshTokenCommand command,
-         IMediator mediator)
+            RefreshTokenCommand command,
+            IMediator mediator)
         {
             var result = await mediator.Send(command);
             return result.ToHttpResult();
         }
 
         private static async Task<IResult> Logout(
-        LogoutCommand command,
-        IMediator mediator)
-            {
-                var result = await mediator.Send(command);
-                return result.ToHttpResult();
-            }
-
-        private static async Task<IResult> GenerateParentCode(
-        GenerateParentCodeCommand command,
-        IMediator mediator)
-        {
-            var result = await mediator.Send(command);
-            return result.ToHttpResult();
-        }
-
-        private static async Task<IResult> ActivateParent(
-        ActivateParentCommand command,
-        IMediator mediator)
-        {
-            var result = await mediator.Send(command);
-            return result.ToHttpResult();
-        }
-
-        private static async Task<IResult> GetParentChildren(
-         IMediator mediator)
-        {
-            var result = await mediator.Send(new GetParentChildrenQuery());
-            return result.ToHttpResult();
-        }
-
-        private static async Task<IResult> CreateAdmin(
-        CreateAdminCommand command,
-        IMediator mediator)
-        {
-            var result = await mediator.Send(command);
-            return result.ToHttpResult();
-        }
-
-        private static async Task<IResult> ChangeUserRole(
-        ChangeUserRoleCommand command,
-        IMediator mediator)
-        {
-            var result = await mediator.Send(command);
-            return result.ToHttpResult();
-        }
-
-        private static async Task<IResult> GetUsers(
-        [AsParameters] GetUsersQuery query,
-        IMediator mediator)
-        {
-            var result = await mediator.Send(query);
-            return result.ToHttpResult();
-        }
-
-        private static async Task<IResult> ToggleUserStatus(
-        Guid userId,
-        bool enable,
-        IMediator mediator)
-        {
-            var command = new ToggleUserStatusCommand
-            {
-                UserId = userId,
-                Enable = enable
-            };
-
-            var result = await mediator.Send(command);
-            return result.ToHttpResult();
-        }
-
-        private static async Task<IResult> CreateStudent(
-           CreateStudentCommand command,
-           IMediator mediator)
-        {
-            var result = await mediator.Send(command);
-            return result.ToHttpResult();
-        }
-
-
-        private static async Task<IResult> CreateDoctor(
-           CreateDoctorCommand command,
-           IMediator mediator)
+            LogoutCommand command,
+            IMediator mediator)
         {
             var result = await mediator.Send(command);
             return result.ToHttpResult();

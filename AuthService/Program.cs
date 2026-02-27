@@ -7,6 +7,9 @@ using Auth.Services;
 using AuthService.Contracts;
 using AuthService.Data;
 using AuthService.Features.Auth;
+using AuthService.Features.Auth.Admin;
+using AuthService.Features.Auth.Parent;
+using AuthService.Features.Auth.Student;
 using AuthService.Features.Extensions;
 using AuthService.Seeding;
 using AuthService.Services;
@@ -236,13 +239,20 @@ namespace Auth_Service
 
             app.UseCors("AllowAll"); // CORS first
 
+            // 🛡️ Global exception handler — must be first to catch everything
+            app.UseMiddleware<Auth.Middlewares.GlobalExceptionMiddleware>();
             app.UseMiddleware<AuthService.Middlewares.CorrelationIdMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseRateLimiter();
             app.MapControllers();
             app.MapGet("/", () => "Auth Service is running...");
+            // Shared (Login, Logout, Activate, Refresh)
             app.MapAuthEndpoints();
+            // Role-specific — each team owns their file
+            app.MapAdminAuthEndpoints();
+            app.MapParentAuthEndpoints();
+            app.MapStudentAuthEndpoints();
             #endregion
 
 

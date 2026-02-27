@@ -11,7 +11,7 @@ namespace AuthService.Seeding
             RoleManager<ApplicationRole> roleManager)
         {
             const string roleName = "SuperAdmin";
-            const string email = "superadmin@university.com";
+            const string email = "superadmin@university.com";   
             const string password = "SuperAdmin@123";
 
             // 1️⃣ Ensure role exists

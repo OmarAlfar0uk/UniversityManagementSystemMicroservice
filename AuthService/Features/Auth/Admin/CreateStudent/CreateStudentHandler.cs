@@ -1,4 +1,5 @@
-﻿using Auth.Models;
+﻿using Auth.Contarcts;
+using Auth.Models;
 using Auth_Service.Features.Shared;
 using AuthService.Contracts;
 using AuthService.Data;
@@ -18,18 +19,21 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
         private readonly UniversitySystemAuthContext _context;
         private readonly IAuditLogger _auditLogger;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly IMailKitEmailService _emailService;
 
 
         public CreateStudentHandler(
        UserManager<ApplicationUser> userManager,
        UniversitySystemAuthContext context,
        IAuditLogger auditLogger,
-       IPublishEndpoint publishEndpoint)
+       IPublishEndpoint publishEndpoint,
+       IMailKitEmailService emailService)
         {
             _userManager = userManager;
             _context = context;
             _auditLogger = auditLogger;
             _publishEndpoint = publishEndpoint;
+            _emailService = emailService;
         }
 
         public async Task<EndpointResponse<CreateStudentResponse>> Handle(
@@ -43,25 +47,27 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                     .ErrorResponse("Email already exists", 409);
             }
 
+            if (!Enum.TryParse<Gender>(request.Gender, true, out var gender))
+            {
+                return EndpointResponse<CreateStudentResponse>.ErrorResponse("Invalid gender value", 400);
+            }
+
+            // ── DB Transaction scope ─────────────────────────────────────────────
+            ApplicationUser student;
+            string code;
+
             await using var transaction =
                 await _context.Database.BeginTransactionAsync(cancellationToken);
-
             try
             {
-              if (!Enum.TryParse<Gender>(request.Gender, true, out var gender))
-                    {
-                    return EndpointResponse<CreateStudentResponse>.ErrorResponse("Invalid gender value", 400);
-
-                }
-
-                var student = new ApplicationUser
+                student = new ApplicationUser
                 {
                     Id = Guid.NewGuid(),
                     UserName = request.Email,
                     Email = request.Email,
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    Gender = gender, 
+                    Gender = gender,
                     IsActivated = false,
                     EmailConfirmed = false
                 };
@@ -70,7 +76,6 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                 if (!createResult.Succeeded)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-
                     return EndpointResponse<CreateStudentResponse>.ErrorResponse(
                         "Failed to create student",
                         400,
@@ -78,12 +83,10 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                     );
                 }
 
-                // 3️⃣ Assign Student role
                 var roleResult = await _userManager.AddToRoleAsync(student, "Student");
                 if (!roleResult.Succeeded)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-
                     return EndpointResponse<CreateStudentResponse>.ErrorResponse(
                         "Failed to assign student role",
                         400,
@@ -91,8 +94,7 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                     );
                 }
 
-                // 4️⃣ Generate activation code
-                var code = Guid.NewGuid().ToString("N")[..6].ToUpper();
+                code = Guid.NewGuid().ToString("N")[..6].ToUpper();
 
                 var activationCode = new ActivationCode
                 {
@@ -107,9 +109,35 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                 _context.ActivationCodes.Add(activationCode);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // 5️⃣ Commit transaction
                 await transaction.CommitAsync(cancellationToken);
+                // ✅ Student is now safely in the database
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                Log.Error(ex, "CreateStudent DB transaction failed for {Email}", request.Email);
+                return EndpointResponse<CreateStudentResponse>.ErrorResponse(
+                    "Failed to create student due to a database error", 500);
+            }
 
+            // ── Post-commit side effects (fire & log — never rollback DB for these) ──
+            try
+            {
+                await _emailService.SendActivationEmailAsync(
+                    student.Email!,
+                    $"{student.FirstName} {student.LastName}",
+                    code,
+                    "Student"
+                );
+            }
+            catch (Exception emailEx)
+            {
+                // Student is already created — just log, don't fail the request
+                Log.Warning(emailEx, "Activation email failed for {Email} (student still created)", request.Email);
+            }
+
+            try
+            {
                 await _publishEndpoint.Publish<IAuthCreated>(new
                 {
                     UserId = student.Id,
@@ -118,36 +146,28 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                     Role = "Student",
                     CreatedAt = DateTime.UtcNow
                 });
-
-                // 6️⃣ Audit log (outside transaction)
-                await _auditLogger.LogAsync(
-                    action: "CreateStudent",
-                    targetId: student.Id.ToString(),
-                    description: $"Student created with email {student.Email}"
-                );
-
-                return EndpointResponse<CreateStudentResponse>.SuccessResponse(
-                    new CreateStudentResponse
-                    {
-                        StudentId = student.Id,
-                        Email = student.Email!,
-                        ActivationCode = code
-                    },
-                    "Student created successfully",
-                    201
-                );
             }
-            catch (Exception ex)
+            catch (Exception pubEx)
             {
-                await transaction.RollbackAsync(cancellationToken);
-
-                Log.Error(ex, "CreateStudent failed for {Email}", request.Email);
-
-                return EndpointResponse<CreateStudentResponse>.ErrorResponse(
-                    "Unexpected error occurred while creating student",
-                    500
-                );
+                Log.Warning(pubEx, "MassTransit publish failed for student {Id} (student still created)", student.Id);
             }
+
+            await _auditLogger.LogAsync(
+                action: "CreateStudent",
+                targetId: student.Id.ToString(),
+                description: $"Student created with email {student.Email}"
+            );
+
+            return EndpointResponse<CreateStudentResponse>.SuccessResponse(
+                new CreateStudentResponse
+                {
+                    StudentId = student.Id,
+                    Email = student.Email!,
+                    ActivationCode = code
+                },
+                "Student created successfully",
+                201
+            );
         }
     }
 }
