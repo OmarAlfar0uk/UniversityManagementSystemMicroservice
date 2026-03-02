@@ -229,15 +229,20 @@ namespace Auth_Service
             #endregion
 
             #region --- Pipeline ---
-            if (app.Environment.IsDevelopment())
+            //if (app.Environment.IsDevelopment())
+            //{
+            //    app.UseSwagger();
+            //    app.UseSwaggerUI();
+            //}
+            app.UseCors("AllowAll"); // CORS first
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth API V1");
+            });
 
             //app.UseHttpsRedirection();
 
-            app.UseCors("AllowAll"); // CORS first
 
             // 🛡️ Global exception handler — must be first to catch everything
             app.UseMiddleware<Auth.Middlewares.GlobalExceptionMiddleware>();
