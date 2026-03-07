@@ -12,11 +12,11 @@ namespace AuthService.Features.Admin.ChangeRole
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
-        private readonly IAuditLogger _auditLogger;
+        private readonly IAuthAuditLogger _auditLogger;
         public ChangeUserRoleHandler(
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager ,
-            IAuditLogger auditLogger)
+            IAuthAuditLogger auditLogger)
         {
             _userManager = userManager;
             _roleManager = roleManager;

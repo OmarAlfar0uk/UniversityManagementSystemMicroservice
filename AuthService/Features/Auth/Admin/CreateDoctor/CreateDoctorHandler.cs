@@ -15,13 +15,13 @@ namespace AuthService.Features.Auth.Admin.CreateDoctor
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly UniversitySystemAuthContext _context;
-        private readonly IAuditLogger _auditLogger;
+        private readonly IAuthAuditLogger _auditLogger;
         private readonly IMailKitEmailService _emailService;
 
         public CreateDoctorHandler(
             UserManager<ApplicationUser> userManager,
             UniversitySystemAuthContext context,
-            IAuditLogger auditLogger,
+            IAuthAuditLogger auditLogger,
             IMailKitEmailService emailService)
         {
             _userManager = userManager;

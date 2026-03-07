@@ -12,12 +12,12 @@ namespace AuthService.Features.Auth.Admin.DeleteUser
         : IRequestHandler<DeleteUserCommand, EndpointResponse<string>>
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IAuditLogger _auditLogger;
+        private readonly IAuthAuditLogger _auditLogger;
         private readonly UniversitySystemAuthContext _context;
 
         public DeleteUserHandler(
             UserManager<ApplicationUser> userManager,
-            IAuditLogger auditLogger,
+            IAuthAuditLogger auditLogger,
             UniversitySystemAuthContext context)
         {
             _userManager = userManager;

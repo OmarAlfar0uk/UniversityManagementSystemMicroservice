@@ -11,8 +11,8 @@ namespace AuthService.Features.Admin.ToggleUserStatus
         : IRequestHandler<ToggleUserStatusCommand, EndpointResponse<string>>
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IAuditLogger _auditLogger;
-        public ToggleUserStatusHandler(UserManager<ApplicationUser> userManager , IAuditLogger auditLogger)
+        private readonly IAuthAuditLogger _auditLogger;
+        public ToggleUserStatusHandler(UserManager<ApplicationUser> userManager , IAuthAuditLogger auditLogger)
         {
             _userManager = userManager;
             _auditLogger = auditLogger;

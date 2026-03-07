@@ -6,12 +6,12 @@ using System.Security.Claims;
 
 namespace AuthService.Services
 {
-    public class AuditLogger : IAuditLogger
+    public class AuthAuditLogger : IAuthAuditLogger
     {
         private readonly UniversitySystemAuthContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AuditLogger(
+        public AuthAuditLogger(
             UniversitySystemAuthContext context,
             IHttpContextAccessor httpContextAccessor)
         {

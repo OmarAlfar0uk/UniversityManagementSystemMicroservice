@@ -154,7 +154,6 @@ namespace Auth_Service
             builder.Services.AddScoped<IImageHelper, ImageHelper>();
             builder.Host.UseSerilog();
             builder.Services.AddAuditLogging();
-            builder.Services.AddScoped<IAuditLogger, AuditLogger>();
             builder.Services.AddCustomRateLimiting();
             builder.Services.AddScoped<ITokenService, JwtService>();
             builder.Services.AddScoped<IMailKitEmailService, MailKitEmailService>();

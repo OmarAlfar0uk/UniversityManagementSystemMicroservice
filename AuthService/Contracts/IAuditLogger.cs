@@ -1,6 +1,6 @@
 ﻿namespace AuthService.Contracts
 {
-    public interface IAuditLogger
+    public interface IAuthAuditLogger
     {
         Task LogAsync(
             string action,

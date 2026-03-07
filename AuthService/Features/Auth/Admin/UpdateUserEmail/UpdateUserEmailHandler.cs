@@ -10,11 +10,11 @@ namespace AuthService.Features.Auth.Admin.UpdateUserEmail
         : IRequestHandler<UpdateUserEmailCommand, EndpointResponse<string>>
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IAuditLogger _auditLogger;
+        private readonly IAuthAuditLogger _auditLogger;
 
         public UpdateUserEmailHandler(
             UserManager<ApplicationUser> userManager,
-            IAuditLogger auditLogger)
+            IAuthAuditLogger auditLogger)
         {
             _userManager = userManager;
             _auditLogger = auditLogger;

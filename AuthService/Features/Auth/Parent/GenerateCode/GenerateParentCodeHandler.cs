@@ -13,11 +13,11 @@ namespace AuthService.Features.Auth.Parent.GenerateCode
     {
         private readonly UniversitySystemAuthContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IAuditLogger _auditLogger;
+        private readonly IAuthAuditLogger _auditLogger;
 
         public GenerateParentCodeHandler(
             UniversitySystemAuthContext context,
-            IHttpContextAccessor httpContextAccessor , IAuditLogger auditLogger)
+            IHttpContextAccessor httpContextAccessor , IAuthAuditLogger auditLogger)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;

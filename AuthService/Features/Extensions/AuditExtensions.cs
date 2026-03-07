@@ -9,7 +9,7 @@ namespace AuthService.Features.Extensions
             this IServiceCollection services)
         {
             services.AddHttpContextAccessor();
-            services.AddScoped<IAuditLogger, AuditLogger>();
+            services.AddScoped<IAuthAuditLogger, AuthAuditLogger>();
 
             return services;
         }

@@ -17,7 +17,7 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly UniversitySystemAuthContext _context;
-        private readonly IAuditLogger _auditLogger;
+        private readonly IAuthAuditLogger _auditLogger;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly IMailKitEmailService _emailService;
 
@@ -25,7 +25,7 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
         public CreateStudentHandler(
        UserManager<ApplicationUser> userManager,
        UniversitySystemAuthContext context,
-       IAuditLogger auditLogger,
+       IAuthAuditLogger auditLogger,
        IPublishEndpoint publishEndpoint,
        IMailKitEmailService emailService)
         {
