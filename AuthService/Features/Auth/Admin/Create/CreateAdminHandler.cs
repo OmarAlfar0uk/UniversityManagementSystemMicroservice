@@ -54,7 +54,8 @@ namespace AuthService.Features.Auth.Admin.Create
                     FirstName = request.FirstName,
                     LastName = request.LastName,
                     IsActivated = false,
-                    EmailConfirmed = false
+                    EmailConfirmed = false,
+                    UniversityId = "ADM-" + Guid.NewGuid().ToString("N")[..10]
                 };
 
                 var result = await _userManager.CreateAsync(adminUser, request.Password);
@@ -107,7 +108,8 @@ namespace AuthService.Features.Auth.Admin.Create
                     adminUser.Email!,
                     $"{adminUser.FirstName} {adminUser.LastName}",
                     activationCode,
-                    "Admin");
+                    "Admin",
+                    adminUser.UniversityId);
             }
             catch (Exception emailEx)
             {

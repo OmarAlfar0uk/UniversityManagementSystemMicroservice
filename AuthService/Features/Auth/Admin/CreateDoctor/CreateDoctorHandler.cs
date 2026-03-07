@@ -58,7 +58,8 @@ namespace AuthService.Features.Auth.Admin.CreateDoctor
                     LastName = request.LastName,
                     Gender = gender,
                     IsActivated = false,
-                    EmailConfirmed = false
+                    EmailConfirmed = false,
+                    UniversityId = "DOC-" + Guid.NewGuid().ToString("N")[..10]
                 };
 
                 var createResult = await _userManager.CreateAsync(doctor);
@@ -110,7 +111,8 @@ namespace AuthService.Features.Auth.Admin.CreateDoctor
                     doctor.Email!,
                     $"{doctor.FirstName} {doctor.LastName}",
                     code,
-                    "Doctor");
+                    "Doctor",
+                    doctor.UniversityId);
             }
             catch (Exception emailEx)
             {

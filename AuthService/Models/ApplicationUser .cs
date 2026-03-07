@@ -12,6 +12,8 @@ namespace Auth.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        public string UniversityId { get; set; } = default!;
+
         public DateTime? DateOfBirth { get; set; }
         public Gender Gender { get; set; }
 

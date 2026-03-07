@@ -3,6 +3,10 @@ using AuthService.Features.Auth.Activate;
 using AuthService.Features.Auth.Login;
 using AuthService.Features.Auth.Logout;
 using AuthService.Features.Auth.Refresh;
+using AuthService.Features.Auth.ForgotPassword;
+using AuthService.Features.Auth.ResetPassword;
+using AuthService.Features.Auth.ResendOtp;
+using AuthService.Features.Auth.VerifyOtp;
 using MediatR;
 using Microsoft.AspNetCore.Routing;
 
@@ -46,6 +50,26 @@ namespace AuthService.Features.Auth
                  .WithSummary("Logout")
                  .WithDescription("Revokes the current refresh token.");
 
+            // POST /api/v1/auth/forgot-password
+            group.MapPost("/forgot-password", ForgotPassword)
+                 .WithSummary("Forgot Password")
+                 .WithDescription("Sends an OTP to the user's email for password reset.");
+
+            // POST /api/v1/auth/resend-otp
+            group.MapPost("/resend-otp", ResendOtp)
+                 .WithSummary("Resend Forgot Password OTP")
+                 .WithDescription("Resends the previously generated OTP with rate-limiting enforcement.");
+
+            // POST /api/v1/auth/verify-otp
+            group.MapPost("/verify-otp", VerifyOtp)
+                 .WithSummary("Verify OTP")
+                 .WithDescription("Verifies the OTP and generates an Identity Password Reset Token.");
+
+            // POST /api/v1/auth/reset-password
+            group.MapPost("/reset-password", ResetPassword)
+                 .WithSummary("Reset Password")
+                 .WithDescription("Resets the user's password using the Identity token.");
+
             return app;
         }
 
@@ -77,6 +101,38 @@ namespace AuthService.Features.Auth
 
         private static async Task<IResult> Logout(
             LogoutCommand command,
+            IMediator mediator)
+        {
+            var result = await mediator.Send(command);
+            return result.ToHttpResult();
+        }
+
+        private static async Task<IResult> ForgotPassword(
+            ForgotPasswordCommand command,
+            IMediator mediator)
+        {
+            var result = await mediator.Send(command);
+            return result.ToHttpResult();
+        }
+
+        private static async Task<IResult> ResetPassword(
+            ResetPasswordCommand command,
+            IMediator mediator)
+        {
+            var result = await mediator.Send(command);
+            return result.ToHttpResult();
+        }
+
+        private static async Task<IResult> ResendOtp(
+            ResendOtpCommand command,
+            IMediator mediator)
+        {
+            var result = await mediator.Send(command);
+            return result.ToHttpResult();
+        }
+
+        private static async Task<IResult> VerifyOtp(
+            VerifyOtpCommand command,
             IMediator mediator)
         {
             var result = await mediator.Send(command);

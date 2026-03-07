@@ -26,6 +26,13 @@ namespace AuthService.Data.Configurations
             builder.Property(u => u.CreatedAt)
                    .IsRequired();
 
+            builder.Property(u => u.UniversityId)
+                   .IsRequired()
+                   .HasMaxLength(20);
+
+            builder.HasIndex(u => u.UniversityId)
+                   .IsUnique();
+
             builder.Property(u => u.LastLoginAt);
 
             builder.Property(u => u.DateOfBirth);

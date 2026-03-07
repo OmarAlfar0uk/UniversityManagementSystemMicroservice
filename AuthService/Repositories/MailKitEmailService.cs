@@ -109,116 +109,161 @@ namespace Auth.Repositories
             await SendEmailAsync(toEmail, subject, body);
         }
 
-        public async Task SendActivationEmailAsync(string toEmail, string userName, string activationCode, string role)
+        public async Task SendActivationEmailAsync(string toEmail, string userName, string activationCode, string role, string universityId)
         {
             string subject = "Welcome to University Management System - Activate Your Account";
 
-            // Build HTML body
-            string body = $@"
-<!DOCTYPE html>
+            string body = $@"<!DOCTYPE html>
 <html lang='en'>
 <head>
 <meta charset='UTF-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0'>
 <style>
     body {{
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f4f7f6;
-        color: #333;
+        font-family: 'Arial', 'Segoe UI', sans-serif;
+        background-color: #f5f6f8;
+        color: #000;
         margin: 0;
         padding: 0;
     }}
     .email-container {{
-        max-width: 600px;
+        max-width: 650px;
         margin: 40px auto;
         background-color: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 25px rgba(0, 102, 255, 0.15); /* Light blue shadow */
+        border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #e0e0e0;
     }}
     .header {{
-        background: linear-gradient(135deg, #0044cc, #0066ff);
-        color: white;
-        padding: 30px 20px;
+        background-color: #0d6efd; /* Primary blue */
+        color: #ffffff;
         text-align: center;
+        padding: 25px 20px;
     }}
     .header h1 {{
         margin: 0;
         font-size: 24px;
+        font-weight: bold;
         letter-spacing: 1px;
     }}
     .content {{
-        padding: 40px 30px;
-        line-height: 1.6;
+        padding: 40px 50px;
+        box-sizing: border-box;
+    }}
+    .greeting {{
+        font-size: 18px;
+        font-weight: bold;
+        color: #0d6efd;
+        margin-bottom: 20px;
     }}
     .welcome-text {{
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 20px;
-        color: #0044cc;
-    }}
-    .activation-box {{
-        margin: 30px auto;
-        padding: 20px;
-        background-color: #f0f4ff;
-        border: 2px dashed #0066ff;
-        border-radius: 8px;
-        text-align: center;
-    }}
-    .activation-code {{
-        font-size: 32px;
-        font-weight: bold;
-        color: #0044cc;
-        letter-spacing: 4px;
-    }}
-    .instruction {{
-        font-size: 15px;
-        color: #555;
-        margin-top: 15px;
-    }}
-    .expiry-note {{
         font-size: 14px;
-        color: #d9534f;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 10px;
+        line-height: 1.6;
+        color: #333;
+        margin-bottom: 30px;
     }}
-    .footer {{
+    .info-box {{
+        background-color: #f8faff;
+        border: 1px dashed #0d6efd;
+        border-radius: 6px;
+        padding: 30px;
+        margin-bottom: 30px;
+        text-align: center;
+    }}
+    .label {{
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 10px;
+    }}
+    .value {{
+        font-size: 36px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        margin: 0 0 10px 0;
+    }}
+    .value-black {{
+        color: #333;
+    }}
+    .value-blue {{
+        color: #0d6efd;
+    }}
+    .subtext {{
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+    }}
+    .divider {{
+        height: 1px;
+        background-color: #dcdfe6;
+        margin: 25px 0;
+    }}
+    .warning-text {{
+        color: #d9534f;
+        text-align: center;
+        font-size: 14px;
+        margin-bottom: 25px;
+    }}
+    .support-text {{
+        font-size: 14px;
+        color: #333;
+    }}
+    .footer-container {{
         background-color: #f9f9f9;
+        border-top: 1px solid #ebebeb;
         padding: 20px;
         text-align: center;
-        font-size: 12px;
+        font-size: 13px;
         color: #888;
-        border-top: 1px solid #eee;
+        line-height: 1.5;
     }}
 </style>
 </head>
 <body>
-    <div class='email-container'>
-        <div class='header'>
-            <h1>University Management System</h1>
-        </div>
-        <div class='content'>
-            <p class='welcome-text'>Hello {role} {userName},</p>
-            <p>Welcome to our university! Your account has been successfully created by the administrator. To get started, please use the activation code below to activate your account.</p>
-
-            <div class='activation-box'>
-                <div class='activation-code'>{activationCode}</div>
-                <p class='instruction'>Enter this code in the activation page</p>
+    <div style='background-color: #f5f6f8; padding: 20px 0;'>
+        <div class='email-container'>
+            <div class='header'>
+                <h1>University Management System</h1>
             </div>
-            <p class='expiry-note'>⚠️ This activation code will expire in 3 days.</p>
 
-            <p>If you have any questions, please contact the IT support department.</p>
-        </div>
-        <div class='footer'>
-            &copy; {DateTime.UtcNow.Year} University Management System. All rights reserved.<br>
-            This is an automated message, please do not reply.
+            <div class='content'>
+                <div class='greeting'>
+                    Hello {role} {userName},
+                </div>
+                
+                <div class='welcome-text'>
+                    Welcome to our university! Your account has been successfully created by the administrator.<br>
+                    To get started, please use your <strong>University ID</strong> and the <strong>Activation Code</strong> below.
+                </div>
+
+                <div class='info-box'>
+                    <div class='label'>Your University ID</div>
+                    <div class='value value-black'>{universityId}</div>
+                    <p class='subtext'>Use this ID along with your password to login later</p>
+
+                    <div class='divider'></div>
+
+                    <div class='label'>Your Activation Code</div>
+                    <div class='value value-blue'>{activationCode}</div>
+                    <p class='subtext'>Enter this code in the activation page</p>
+                </div>
+
+                <div class='warning-text'>
+                    <span style='color: #ed9c28; font-weight: bold; margin-right: 5px;'>⚠️</span> This activation code will expire in 3 days.
+                </div>
+
+                <div class='support-text'>
+                    If you have any questions, please contact the IT support department.
+                </div>
+            </div>
+            
+            <div class='footer-container'>
+                &copy; {DateTime.UtcNow.Year} University Management System. All rights reserved.<br>
+                This is an automated message, please do not reply.
+            </div>
         </div>
     </div>
 </body>
-</html>
-";
+</html>";
 
             await SendEmailAsync(toEmail, subject, body);
         }

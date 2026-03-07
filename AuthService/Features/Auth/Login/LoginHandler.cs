@@ -3,6 +3,7 @@ using Auth.Models;
 using Auth_Service.Features.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.Features.Auth.Login
 {
@@ -23,7 +24,10 @@ namespace AuthService.Features.Auth.Login
             LoginCommand request,
             CancellationToken cancellationToken)
         {
-            var user = await _userManager.FindByNameAsync(request.Username);
+            // Check if username is an email or UniversityId
+            var user = request.Username.Contains("@")
+                ? await _userManager.FindByEmailAsync(request.Username)
+                : await _userManager.Users.SingleOrDefaultAsync(u => u.UniversityId == request.Username, cancellationToken);
 
             if (user == null)
             {

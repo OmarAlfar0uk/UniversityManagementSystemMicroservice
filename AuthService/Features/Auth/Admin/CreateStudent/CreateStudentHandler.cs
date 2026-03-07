@@ -60,6 +60,45 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                 await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
+                // Generate a sequential UniversityId (e.g., last 2 digits of Year + "001", "002", etc.)
+                string yearSuffix = DateTime.UtcNow.Year.ToString().Substring(2, 2);
+
+                var maxIdString = await _context.Users
+                    .Where(u => !string.IsNullOrEmpty(u.UniversityId) && u.UniversityId.StartsWith(yearSuffix))
+                    .OrderByDescending(u => u.UniversityId.Length)
+                    .ThenByDescending(u => u.UniversityId)
+                    .Select(u => u.UniversityId)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                string generatedUniversityId;
+                if (string.IsNullOrEmpty(maxIdString))
+                {
+                    generatedUniversityId = $"{yearSuffix}001";
+                }
+                else
+                {
+                    var numericPart = maxIdString.Substring(2);
+                    if (int.TryParse(numericPart, out int number))
+                    {
+                        generatedUniversityId = $"{yearSuffix}{(number + 1).ToString().PadLeft(3, '0')}";
+                    }
+                    else
+                    {
+                        // Fallback
+                        generatedUniversityId = $"{yearSuffix}001";
+                    }
+                }
+
+                // Ensure it's unique (in case of race conditions during concurrent requests)
+                while (await _context.Users.AnyAsync(u => u.UniversityId == generatedUniversityId, cancellationToken))
+                {
+                    var numericPart = generatedUniversityId.Substring(2);
+                    if (int.TryParse(numericPart, out int number))
+                    {
+                        generatedUniversityId = $"{yearSuffix}{(number + 1).ToString().PadLeft(3, '0')}";
+                    }
+                }
+
                 student = new ApplicationUser
                 {
                     Id = Guid.NewGuid(),
@@ -69,7 +108,8 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                     LastName = request.LastName,
                     Gender = gender,
                     IsActivated = false,
-                    EmailConfirmed = false
+                    EmailConfirmed = false,
+                    UniversityId = generatedUniversityId
                 };
 
                 var createResult = await _userManager.CreateAsync(student);
@@ -127,7 +167,8 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                     student.Email!,
                     $"{student.FirstName} {student.LastName}",
                     code,
-                    "Student"
+                    "Student",
+                    student.UniversityId
                 );
             }
             catch (Exception emailEx)
@@ -163,7 +204,8 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                 {
                     StudentId = student.Id,
                     Email = student.Email!,
-                    ActivationCode = code
+                    ActivationCode = code,
+                    UniversityId = student.UniversityId
                 },
                 "Student created successfully",
                 201
