@@ -1,5 +1,8 @@
-﻿using NotificationService.Contracts;
+﻿using Microsoft.EntityFrameworkCore;
+using NotificationService.Contracts;
+using NotificationService.Data;
 using NotificationService.Middlewares;
+using NotificationService.Repositories;
 using NotificationService.Services;
 
 namespace NotificationService
@@ -16,7 +19,12 @@ namespace NotificationService
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<INotificationAuditLogger, NotificationAuditLogger>();
-
+            #region Database
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<NotificationDbContext>(options =>
+                options.UseSqlServer(connectionString));
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            #endregion
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())

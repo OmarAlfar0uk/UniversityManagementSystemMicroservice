@@ -1,6 +1,9 @@
 ﻿using ExamService.Contracts;
+using ExamService.Data;
 using ExamService.Middlewares;
+using ExamService.Repositories;
 using ExamService.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExamService
 {
@@ -16,7 +19,12 @@ namespace ExamService
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IExamAuditLogger, ExamAuditLogger>();
-
+            #region Database
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<ExamDbContext>(options =>
+                options.UseSqlServer(connectionString));
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            #endregion
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())

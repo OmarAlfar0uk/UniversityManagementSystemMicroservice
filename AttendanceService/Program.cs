@@ -1,6 +1,9 @@
 ﻿using AttendanceService.Contracts;
+using AttendanceService.Data;
 using AttendanceService.Middlewares;
+using AttendanceService.Repositories;
 using AttendanceService.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace AttendanceService
 {
@@ -16,7 +19,12 @@ namespace AttendanceService
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAttendanceAuditLogger, AttendanceAuditLogger>();
-
+            #region Database
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<AttendanceDbContext>(options =>
+                options.UseSqlServer(connectionString));
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            #endregion
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())

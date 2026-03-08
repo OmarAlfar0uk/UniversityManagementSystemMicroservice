@@ -1,6 +1,9 @@
 ﻿using AcademicService.Contracts;
+using AcademicService.Data;
 using AcademicService.Middlewares;
+using AcademicService.Repositories;
 using AcademicService.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace AcademicService
 {
@@ -16,6 +19,14 @@ namespace AcademicService
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAcademicAuditLogger, AcademicAuditLogger>();
+
+
+            #region Database
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<AcademicDbContext>(options =>
+                options.UseSqlServer(connectionString));
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            #endregion
 
             var app = builder.Build();
 

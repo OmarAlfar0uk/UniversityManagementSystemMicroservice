@@ -1,4 +1,5 @@
-﻿using ReportingDashboardService.Contracts;
+﻿using Microsoft.EntityFrameworkCore;
+using ReportingDashboardService.Contracts;
 using ReportingDashboardService.Middlewares;
 using ReportingDashboardService.Services;
 
@@ -16,7 +17,11 @@ namespace ReportingDashboardService
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IReportingAuditLogger, ReportingAuditLogger>();
-
+            //#region Database
+            //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            //builder.Services.AddDbContext<UniversitySystemAuthContext>(options =>
+            //    options.UseSqlServer(connectionString));
+            //#endregion
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
