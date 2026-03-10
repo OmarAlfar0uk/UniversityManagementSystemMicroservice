@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Threading.RateLimiting;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,9 +81,32 @@ builder.Services.AddRateLimiter(options =>
 // 7. HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 
+// 10. Swagger Configuration for Aggregation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Learnify API Gateway", Version = "v1" });
+});
+
 var app = builder.Build();
 
 // Pipeline Order
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/v1/swagger.json", "API Gateway");
+        c.SwaggerEndpoint("http://localhost:5001/swagger/v1/swagger.json", "Auth Service");
+        c.SwaggerEndpoint("http://localhost:5002/swagger/v1/swagger.json", "Academic Service");
+        c.SwaggerEndpoint("http://localhost:5003/swagger/v1/swagger.json", "Attendance Service");
+        c.SwaggerEndpoint("http://localhost:5004/swagger/v1/swagger.json", "Exam Service");
+        c.SwaggerEndpoint("http://localhost:5005/swagger/v1/swagger.json", "Grade Service");
+        c.SwaggerEndpoint("http://localhost:5006/swagger/v1/swagger.json", "Notification Service");
+        c.SwaggerEndpoint("http://localhost:5007/swagger/v1/swagger.json", "Message Service");
+        c.SwaggerEndpoint("http://localhost:5008/swagger/v1/swagger.json", "Progress Service");
+    });
+}
 app.UseSerilogRequestLogging();
 app.UseCors("AllowAll");
 

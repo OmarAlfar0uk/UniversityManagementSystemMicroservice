@@ -20,7 +20,7 @@ public class SubmitAssignmentFileHandler : IRequestHandler<SubmitAssignmentFileC
         _publishEndpoint = publishEndpoint;
     }
 
-    public async Task Handle(SubmitAssignmentFileCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(SubmitAssignmentFileCommand request, CancellationToken cancellationToken)
     {
         var assignment = await _unitOfWork.Assignments.FindAsync(a => a.LectureId == request.LectureId);
         if (assignment is null)
@@ -54,5 +54,7 @@ public class SubmitAssignmentFileHandler : IRequestHandler<SubmitAssignmentFileC
             AssignmentId = submission.AssignmentId,
             SubmissionDate = submission.SubmittedAt
         }, cancellationToken);
+
+        return Unit.Value;
     }
 }

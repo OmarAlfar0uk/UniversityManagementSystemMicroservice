@@ -12,7 +12,7 @@ public class DeleteCourseHandler : IRequestHandler<DeleteCourseCommand>
         _unitOfWork = unitOfWork;
     }
 
-    public async Task Handle(DeleteCourseCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(DeleteCourseCommand request, CancellationToken cancellationToken)
     {
         var course = await _unitOfWork.Courses.GetByIdAsync(request.CourseId);
         if (course is null)
@@ -20,5 +20,7 @@ public class DeleteCourseHandler : IRequestHandler<DeleteCourseCommand>
 
         _unitOfWork.Courses.Remove(course);
         await _unitOfWork.SaveChangesAsync();
+
+        return Unit.Value;
     }
 }

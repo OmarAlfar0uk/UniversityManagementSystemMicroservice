@@ -1,6 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using NotificationService.Contracts;
 using NotificationService.Data;
 using NotificationService.Features.Notifications;
@@ -22,6 +25,17 @@ namespace NotificationService
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            #region CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", builder => builder
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .SetIsOriginAllowed(origin => true)
+                    .AllowCredentials());
+            });
+            #endregion
+
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<INotificationAuditLogger, NotificationAuditLogger>();
 
@@ -36,6 +50,28 @@ namespace NotificationService
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             #endregion
 
+            #region JWT Configuration
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            var secretKey = jwtSettings["SecretKey"];
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings["Issuer"],
+                        ValidAudience = jwtSettings["Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
+                    };
+                });
+
+            builder.Services.AddAuthorization();
+            #endregion
+
             #region massTransit with RabbitMQ
             builder.Services.AddMassTransit(x =>
             {
@@ -43,10 +79,11 @@ namespace NotificationService
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host("localhost", "/", h =>
+                    var rabbitSettings = builder.Configuration.GetSection("RabbitMQ");
+                    cfg.Host(rabbitSettings["Host"] ?? "localhost", "/", h =>
                     {
-                        h.Username("guest");
-                        h.Password("guest");
+                        h.Username(rabbitSettings["Username"] ?? "guest");
+                        h.Password(rabbitSettings["Password"] ?? "guest");
                     });
 
                     cfg.ReceiveEndpoint("auth-created-queue", e =>
@@ -65,11 +102,14 @@ namespace NotificationService
                 app.UseSwaggerUI();
             }
 
+            app.UseCors("AllowAll");
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseMiddleware<CorrelationIdMiddleware>();
             app.UseMiddleware<SerilogEnricherMiddleware>();
 
             app.UseHttpsRedirection();
+            app.UseCors("AllowAll");
+            app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
 

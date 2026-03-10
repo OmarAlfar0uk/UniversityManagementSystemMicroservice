@@ -13,7 +13,7 @@ public class EnrollStudentsHandler : IRequestHandler<EnrollStudentsCommand>
         _unitOfWork = unitOfWork;
     }
 
-    public async Task Handle(EnrollStudentsCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(EnrollStudentsCommand request, CancellationToken cancellationToken)
     {
         var course = await _unitOfWork.Courses.GetByIdAsync(request.CourseId);
         if (course is null)
@@ -39,5 +39,7 @@ public class EnrollStudentsHandler : IRequestHandler<EnrollStudentsCommand>
 
         await _unitOfWork.CourseEnrollments.AddRangeAsync(newEnrollments);
         await _unitOfWork.SaveChangesAsync();
+
+        return Unit.Value;
     }
 }

@@ -169,10 +169,11 @@ namespace Auth_Service
             {
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host("localhost", "/", h =>
+                    var rabbitSettings = builder.Configuration.GetSection("RabbitMQ");
+                    cfg.Host(rabbitSettings["Host"] ?? "localhost", "/", h =>
                     {
-                        h.Username("guest");
-                        h.Password("guest");
+                        h.Username(rabbitSettings["Username"] ?? "guest");
+                        h.Password(rabbitSettings["Password"] ?? "guest");
                     });
                 });
             });

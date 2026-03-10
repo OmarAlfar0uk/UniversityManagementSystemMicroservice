@@ -17,7 +17,7 @@ public class MarkVideoWatchedHandler : IRequestHandler<MarkVideoWatchedCommand>
         _unitOfWork = unitOfWork;
     }
 
-    public async Task Handle(MarkVideoWatchedCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(MarkVideoWatchedCommand request, CancellationToken cancellationToken)
     {
         // Verify lecture exists
         var lecture = await _unitOfWork.Lectures.GetByIdAsync(request.LectureId);
@@ -25,6 +25,6 @@ public class MarkVideoWatchedHandler : IRequestHandler<MarkVideoWatchedCommand>
             throw new KeyNotFoundException($"Lecture {request.LectureId} not found.");
 
         // Progress tracking is done by ProgressService — this endpoint just validates and returns 204
-        await Task.CompletedTask;
+        return Unit.Value;
     }
 }

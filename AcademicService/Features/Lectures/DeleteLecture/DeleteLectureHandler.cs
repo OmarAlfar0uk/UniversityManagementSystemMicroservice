@@ -12,7 +12,7 @@ public class DeleteLectureHandler : IRequestHandler<DeleteLectureCommand>
         _unitOfWork = unitOfWork;
     }
 
-    public async Task Handle(DeleteLectureCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(DeleteLectureCommand request, CancellationToken cancellationToken)
     {
         var lecture = await _unitOfWork.Lectures.GetByIdAsync(request.LectureId);
         if (lecture is null)
@@ -20,5 +20,7 @@ public class DeleteLectureHandler : IRequestHandler<DeleteLectureCommand>
 
         _unitOfWork.Lectures.Remove(lecture);
         await _unitOfWork.SaveChangesAsync();
+
+        return Unit.Value;
     }
 }

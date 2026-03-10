@@ -17,7 +17,7 @@ public class SubmitAssignmentUrlHandler : IRequestHandler<SubmitAssignmentUrlCom
         _publishEndpoint = publishEndpoint;
     }
 
-    public async Task Handle(SubmitAssignmentUrlCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(SubmitAssignmentUrlCommand request, CancellationToken cancellationToken)
     {
         var assignment = await _unitOfWork.Assignments.FindAsync(a => a.LectureId == request.LectureId);
         if (assignment is null)
@@ -49,5 +49,7 @@ public class SubmitAssignmentUrlHandler : IRequestHandler<SubmitAssignmentUrlCom
             AssignmentId = submission.AssignmentId,
             SubmissionDate = submission.SubmittedAt
         }, cancellationToken);
+
+        return Unit.Value;
     }
 }
