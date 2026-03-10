@@ -1,16 +1,20 @@
 ﻿using Auth.Behaviors;
 using Auth.Contarcts;
-using Auth.Data.Seed;
-using Auth.Features.Auth.ChangePassword;
-using Auth.Features.Auth.Login;
-using Auth.Features.Auth.Logout;
-using Auth.Features.Auth.Register;
-using Auth.Features.Auth.UpdateUserProfile;
+using Auth.Data.Seeding;
 using Auth.Models;
 using Auth.Repositories;
 using Auth.Services;
+using AuthService.Contracts;
 using AuthService.Data;
+using AuthService.Features.Auth;
+using AuthService.Features.Auth.Admin;
+using AuthService.Features.Auth.Parent;
+using AuthService.Features.Auth.Student;
+using AuthService.Features.Extensions;
+using AuthService.Seeding;
+using AuthService.Services;
 using FluentValidation;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -20,6 +24,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using System.Reflection;
 using System.Text;
 
@@ -30,13 +35,32 @@ namespace Auth_Service
     {
         public static async Task Main(string[] args)
         {
+            #region Serilog
+            Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .WriteTo.Console(
+            outputTemplate:
+            "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}"
+               )
+
+            .WriteTo.File(
+                path: "Logs/log-.txt",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7,
+                shared: true)
+            .CreateLogger();
+            #endregion
+
             var builder = WebApplication.CreateBuilder(args);
 
-            // --- Services ---
+            #region --- Services ---
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
-            // Swagger Configuration
+                 #region Swagger Configuration
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Auth API", Version = "v1" });
@@ -59,25 +83,37 @@ namespace Auth_Service
                     }
                 });
             });
+            #endregion
 
-            // Database
+                 #region Database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<UniversitySystemAuthContext>(options =>
                 options.UseSqlServer(connectionString));
+            #endregion
 
-            // Identity
-            builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+                 #region Identity
+            builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
+                // Password
                 options.Password.RequireDigit = false;
                 options.Password.RequiredLength = 6;
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireLowercase = false;
-            })
-            .AddEntityFrameworkStores<UniversitySystemAuthContext>()
-            .AddDefaultTokenProviders();
 
-            // JWT Configuration
+                // User
+                options.User.RequireUniqueEmail = false;
+
+                // Lockout
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+                options.Lockout.AllowedForNewUsers = true;
+            })
+              .AddEntityFrameworkStores<UniversitySystemAuthContext>()
+              .AddDefaultTokenProviders();
+            #endregion
+
+                 #region JWT Configuration
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
 
@@ -101,8 +137,9 @@ namespace Auth_Service
             });
 
             builder.Services.AddAuthorization();
+            #endregion
 
-            // CORS
+                 #region CORS
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", builder => builder
@@ -111,68 +148,119 @@ namespace Auth_Service
                     .SetIsOriginAllowed(origin => true)
                     .AllowCredentials());
             });
+            #endregion
 
-            // DI Registrations
+                 #region DI Registrations
             builder.Services.AddScoped<IImageHelper, ImageHelper>();
-            builder.Services.AddScoped<UpdateUserProfileOrchestrator>();
-            builder.Services.AddScoped<LoginHandler>();
-            builder.Services.AddScoped<RegisterHandler>();
-            builder.Services.AddScoped<ChangePasswordHandler>();
-
-            builder.Services.AddScoped<LogoutHandler>();
-
+            builder.Host.UseSerilog();
+            builder.Services.AddAuditLogging();
+            builder.Services.AddCustomRateLimiting();
             builder.Services.AddScoped<ITokenService, JwtService>();
             builder.Services.AddScoped<IMailKitEmailService, MailKitEmailService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
-            builder.Services.AddValidatorsFromAssemblyContaining<RegisterCommandValidator>();
             builder.Services.AddTransient(
             typeof(IPipelineBehavior<,>),
             typeof(ValidationBehavior<,>)
             );
 
-            // Caching
+            #region massTransit with RabbitMQ
+            builder.Services.AddMassTransit(x =>
+            {
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    var rabbitSettings = builder.Configuration.GetSection("RabbitMQ");
+                    cfg.Host(rabbitSettings["Host"] ?? "localhost", "/", h =>
+                    {
+                        h.Username(rabbitSettings["Username"] ?? "guest");
+                        h.Password(rabbitSettings["Password"] ?? "guest");
+                    });
+                });
+            });
+            #endregion
+
+
+            #endregion
+
+
+            #region Caching
             builder.Services.AddMemoryCache();
+            builder.Services.AddHttpContextAccessor();
+
+            #endregion
+
+            #endregion
 
             var app = builder.Build();
 
-            // --- Migration & Seeding ---
+            #region --- Migration & Seeding ---
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+
                 try
                 {
                     Console.WriteLine("📊 [Auth] Starting database migration...");
+
                     var context = services.GetRequiredService<UniversitySystemAuthContext>();
                     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-                    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+                    var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
+                    // 1️⃣ Apply migrations
                     await context.Database.MigrateAsync();
-                    await IdentitySeeder.SeedIdentityAsync(roleManager, userManager);
+
+                    // 2️⃣ Seed roles
+                    await RoleSeeder.SeedRolesAsync(roleManager);
+
+                    // 3️⃣ Seed SuperAdmin (depends on roles)
+                    await SuperAdminSeeder.SeedSuperAdminAsync(userManager, roleManager);
+
                     Console.WriteLine("✅ [Auth] Database migration & seeding completed.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ [Auth] Error seeding data: {ex.Message}");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"❌ [Auth] Error during migration/seeding: {ex.Message}");
+                    Console.ResetColor();
                 }
             }
 
-            // --- Pipeline ---
-            if (app.Environment.IsDevelopment())
+
+            #endregion
+
+            #region --- Pipeline ---
+            //if (app.Environment.IsDevelopment())
+            //{
+            //    app.UseSwagger();
+            //    app.UseSwaggerUI();
+            //}
+            app.UseCors("AllowAll"); // CORS first
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth API V1");
+            });
 
             //app.UseHttpsRedirection();
 
-            app.UseCors("AllowAll"); // CORS first
 
+            // 🛡️ Global exception handler — must be first to catch everything
+            app.UseMiddleware<Auth.Middlewares.GlobalExceptionMiddleware>();
+            app.UseMiddleware<AuthService.Middlewares.CorrelationIdMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseRateLimiter();
             app.MapControllers();
             app.MapGet("/", () => "Auth Service is running...");
+            // Shared (Login, Logout, Activate, Refresh)
+            app.MapAuthEndpoints();
+            // Role-specific — each team owns their file
+            app.MapAdminAuthEndpoints();
+            app.MapParentAuthEndpoints();
+            app.MapStudentAuthEndpoints();
+            #endregion
+
+
             await app.RunAsync();
         }
     }

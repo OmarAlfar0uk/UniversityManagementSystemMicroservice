@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
-using Auth.Contarcts;
+﻿using Auth.Contarcts;
 using Auth.Models;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Auth.Repositories
 {
@@ -70,13 +72,16 @@ namespace Auth.Repositories
                 return null;
 
             var trackedUser = await _userManager.FindByIdAsync(user.Id.ToString());
+            if (trackedUser == null)
+                return null;
 
             var roles = await GetUserRolesCachedAsync(trackedUser);
 
             var newAccessToken = GenerateAccessToken(trackedUser, roles);
 
             // Renew Refresh Token
-            trackedUser.RefreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+            trackedUser.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
             trackedUser.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await _userManager.UpdateAsync(trackedUser);
 
@@ -88,10 +93,16 @@ namespace Auth.Repositories
         {
             var claims = new List<Claim>
             {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim("id", user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            if (!string.IsNullOrEmpty(user.Email))
+            {
+                claims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
+            }
+
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]));

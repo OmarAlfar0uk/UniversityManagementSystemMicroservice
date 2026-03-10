@@ -1,7 +1,10 @@
-﻿using MediatR;
+﻿using Auth_Service.Features.Shared;
+using MediatR;
 
-namespace Auth.Features.Auth.Logout
+namespace AuthService.Features.Auth.Logout
 {
-    public record LogoutCommand(Guid UserId) : IRequest<LogoutResponse>;
-
+    public class LogoutCommand : IRequest<EndpointResponse<string>>
+    {
+        public string RefreshToken { get; set; } = default!;
+    }
 }

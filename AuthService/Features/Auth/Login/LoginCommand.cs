@@ -1,10 +1,12 @@
 ﻿using Auth_Service.Features.Shared;
 using MediatR;
 
-namespace Auth.Features.Auth.Login
+namespace AuthService.Features.Auth.Login
 {
-
-    public record LoginCommand(string Email, string Password, bool RememberMe)
-        : IRequest<RequestResponse<LoginResponse>>;
-
+    public class LoginCommand : IRequest<EndpointResponse<LoginResponse>>
+    {
+        public string Username { get; set; } = default!;
+        public string Password { get; set; } = default!;
+        public bool RememberMe { get; set; } = false;
+    }
 }
