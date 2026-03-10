@@ -8,6 +8,8 @@ public class AttendanceRecord
     public Guid CourseId { get; set; }
     public DateTime RegisteredAt { get; set; }
     public bool IsManual { get; set; }
+    public bool IsAttended { get; set; }
+    public string? LectureTitle { get; set; }
     public Guid? AttendanceCodeId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

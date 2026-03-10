@@ -1,0 +1,17 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\Services\VideoHelper.cs(45,24): warning CS8603: Possible null reference return. [E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\AcademicService.csproj]
+E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\Features\Schedule\GetMidtermSchedule\GetMidtermScheduleHandler.cs(20,93): error CS0117: 'ScheduleType' does not contain a definition for 'Midterm' [E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\AcademicService.csproj]
+E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\Features\Schedule\GetClassSchedule\GetClassScheduleHandler.cs(19,93): error CS0117: 'ScheduleType' does not contain a definition for 'Class' [E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\AcademicService.csproj]
+E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\Services\FileHelper.cs(44,24): warning CS8603: Possible null reference return. [E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\AcademicService.csproj]
+
+Build FAILED.
+
+E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\Services\VideoHelper.cs(45,24): warning CS8603: Possible null reference return. [E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\AcademicService.csproj]
+E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\Services\FileHelper.cs(44,24): warning CS8603: Possible null reference return. [E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\AcademicService.csproj]
+E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\Features\Schedule\GetMidtermSchedule\GetMidtermScheduleHandler.cs(20,93): error CS0117: 'ScheduleType' does not contain a definition for 'Midterm' [E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\AcademicService.csproj]
+E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\Features\Schedule\GetClassSchedule\GetClassScheduleHandler.cs(19,93): error CS0117: 'ScheduleType' does not contain a definition for 'Class' [E:\FinalProject\UniversityManagementSystemMicroservice\AcademicService\AcademicService.csproj]
+    2 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:02.76

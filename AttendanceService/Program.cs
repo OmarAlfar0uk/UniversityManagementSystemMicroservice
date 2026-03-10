@@ -1,8 +1,11 @@
 ﻿using AttendanceService.Contracts;
 using AttendanceService.Data;
+using AttendanceService.Features.Attendance;
 using AttendanceService.Middlewares;
 using AttendanceService.Repositories;
 using AttendanceService.Services;
+using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AttendanceService
@@ -19,6 +22,11 @@ namespace AttendanceService
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAttendanceAuditLogger, AttendanceAuditLogger>();
+
+            #region MediatR & Validation
+            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+            builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+            #endregion
             #region Database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<AttendanceDbContext>(options =>
@@ -40,6 +48,8 @@ namespace AttendanceService
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();
+
+            app.MapAttendanceEndpoints();
 
             app.Run();
         }

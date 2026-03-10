@@ -1,0 +1,36 @@
+using AttendanceService.Contracts;
+using AttendanceService.Features.Attendance.GetCoursesAttendance;
+using MediatR;
+
+namespace AttendanceService.Features.Attendance.GetChildAttendance;
+
+public class GetChildAttendanceHandler : IRequestHandler<GetChildAttendanceQuery, IEnumerable<CourseAttendanceResponse>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+
+    public GetChildAttendanceHandler(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<IEnumerable<CourseAttendanceResponse>> Handle(
+        GetChildAttendanceQuery request, CancellationToken cancellationToken)
+    {
+        var records = await _unitOfWork.AttendanceRecords
+            .GetAllAsync(r => r.StudentId == request.StudentId);
+
+        return records
+            .GroupBy(r => r.CourseId)
+            .Select(g =>
+            {
+                var attended = g.Count(r => r.IsAttended);
+                var total = g.Count();
+                return new CourseAttendanceResponse(
+                    g.Key,
+                    total,
+                    attended,
+                    total == 0 ? 0m : Math.Round((decimal)attended / total * 100, 2)
+                );
+            });
+    }
+}

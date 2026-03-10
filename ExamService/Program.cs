@@ -1,8 +1,12 @@
 ﻿using ExamService.Contracts;
 using ExamService.Data;
+using ExamService.Features.Quiz;
 using ExamService.Middlewares;
 using ExamService.Repositories;
 using ExamService.Services;
+using FluentValidation;
+using MassTransit;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ExamService
@@ -19,12 +23,32 @@ namespace ExamService
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IExamAuditLogger, ExamAuditLogger>();
+
+            #region MediatR & Validation
+            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+            builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+            #endregion
             #region Database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<ExamDbContext>(options =>
                 options.UseSqlServer(connectionString));
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             #endregion
+
+            #region massTransit with RabbitMQ
+            builder.Services.AddMassTransit(x =>
+            {
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    cfg.Host("localhost", "/", h =>
+                    {
+                        h.Username("guest");
+                        h.Password("guest");
+                    });
+                });
+            });
+            #endregion
+
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -40,6 +64,8 @@ namespace ExamService
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();
+
+            app.MapQuizEndpoints();
 
             app.Run();
         }
