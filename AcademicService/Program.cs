@@ -1,4 +1,4 @@
-﻿using AcademicService.Contracts;
+using AcademicService.Contracts;
 using AcademicService.Data;
 using AcademicService.Features.Assignments;
 using AcademicService.Features.Courses;
@@ -14,19 +14,46 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 namespace AcademicService
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Academic API", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter your valid JWT token in the text input below. The 'Bearer' prefix will be added automatically.\r\n\r\nExample: \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\""
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
             #region CORS
             builder.Services.AddCors(options =>
@@ -62,7 +89,17 @@ namespace AcademicService
 
             #region JWT Configuration
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            var issuer = jwtSettings["Issuer"];
+            var audience = jwtSettings["Audience"];
             var secretKey = jwtSettings["SecretKey"];
+
+            if (string.IsNullOrWhiteSpace(issuer) ||
+                string.IsNullOrWhiteSpace(audience) ||
+                string.IsNullOrWhiteSpace(secretKey))
+            {
+                throw new InvalidOperationException(
+                    "JwtSettings are missing. Please set JwtSettings:Issuer, JwtSettings:Audience, and JwtSettings:SecretKey.");
+            }
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -73,9 +110,9 @@ namespace AcademicService
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwtSettings["Issuer"],
-                        ValidAudience = jwtSettings["Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
+                        ValidIssuer = issuer,
+                        ValidAudience = audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
                     };
                 });
 
@@ -99,18 +136,37 @@ namespace AcademicService
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
+            using (var scope = app.Services.CreateScope())
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                var services = scope.ServiceProvider;
+                try
+                {
+                    Console.WriteLine("ðŸ“Š [AcademicService] Starting database seeding...");
+                    await AcademicService.Seeding.DataSeeder.SeedAsync(services);
+                    Console.WriteLine("âœ… [AcademicService] Database seeding completed.");
+                }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"âŒ [AcademicService] Error during seeding: {ex.Message}");
+                    Console.ResetColor();
+                }
             }
+
+            //if (app.Environment.IsDevelopment())
+            //{
+            //    app.UseSwagger();
+            //    app.UseSwaggerUI();
+            //}
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseCors("AllowAll");
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseMiddleware<CorrelationIdMiddleware>();
             app.UseMiddleware<SerilogEnricherMiddleware>();
 
-            app.UseHttpsRedirection();
+           // app.UseHttpsRedirection();
             app.UseCors("AllowAll");
             app.UseAuthentication();
             app.UseAuthorization();
@@ -122,7 +178,8 @@ namespace AcademicService
             app.MapAssignmentEndpoints();
             app.MapScheduleEndpoints();
 
-            app.Run();
+            await app.RunAsync();
         }
     }
 }
+

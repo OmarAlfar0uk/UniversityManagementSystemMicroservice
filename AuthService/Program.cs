@@ -1,4 +1,4 @@
-﻿using Auth.Behaviors;
+using Auth.Behaviors;
 using Auth.Contarcts;
 using Auth.Data.Seeding;
 using Auth.Models;
@@ -115,7 +115,17 @@ namespace Auth_Service
 
                  #region JWT Configuration
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            var issuer = jwtSettings["Issuer"];
+            var audience = jwtSettings["Audience"];
             var secretKey = jwtSettings["SecretKey"];
+
+            if (string.IsNullOrWhiteSpace(issuer) ||
+                string.IsNullOrWhiteSpace(audience) ||
+                string.IsNullOrWhiteSpace(secretKey))
+            {
+                throw new InvalidOperationException(
+                    "JwtSettings are missing. Please set JwtSettings:Issuer, JwtSettings:Audience, and JwtSettings:SecretKey.");
+            }
 
             builder.Services.AddAuthentication(options =>
             {
@@ -130,9 +140,9 @@ namespace Auth_Service
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings["Issuer"],
-                    ValidAudience = jwtSettings["Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
+                    ValidIssuer = issuer,
+                    ValidAudience = audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
                 };
             });
 
@@ -265,3 +275,4 @@ namespace Auth_Service
         }
     }
 }
+

@@ -24,7 +24,17 @@ builder.Services.AddReverseProxy()
 
 // 2. JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"];
+            var issuer = jwtSettings["Issuer"];
+            var audience = jwtSettings["Audience"];
+            var secretKey = jwtSettings["SecretKey"];
+
+            if (string.IsNullOrWhiteSpace(issuer) ||
+                string.IsNullOrWhiteSpace(audience) ||
+                string.IsNullOrWhiteSpace(secretKey))
+            {
+                throw new InvalidOperationException(
+                    "JwtSettings are missing. Please set JwtSettings:Issuer, JwtSettings:Audience, and JwtSettings:SecretKey.");
+            }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -35,9 +45,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
 
@@ -97,8 +107,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Gateway");
-        c.SwaggerEndpoint("http://localhost:5001/swagger/v1/swagger.json", "Auth Service");
-        c.SwaggerEndpoint("http://localhost:5002/swagger/v1/swagger.json", "Academic Service");
+        c.SwaggerEndpoint("http://localhost:5000/swagger/v1/swagger.json", "Auth Service");
+        c.SwaggerEndpoint("http://localhost:5005/swagger/v1/swagger.json", "Academic Service");
         c.SwaggerEndpoint("http://localhost:5003/swagger/v1/swagger.json", "Attendance Service");
         c.SwaggerEndpoint("http://localhost:5004/swagger/v1/swagger.json", "Exam Service");
         c.SwaggerEndpoint("http://localhost:5005/swagger/v1/swagger.json", "Grade Service");
@@ -126,3 +136,4 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "API 
 app.MapReverseProxy();
 
 app.Run();
+
