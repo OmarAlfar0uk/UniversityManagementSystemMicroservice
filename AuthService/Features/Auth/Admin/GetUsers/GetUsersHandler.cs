@@ -50,7 +50,8 @@ namespace AuthService.Features.Auth.Admin.GetUsers
                     FullName = user.FullName,
                     IsActivated = user.IsActivated,
                     Roles = roles.ToList(),
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    DepartmentId = user.DepartmentId
                 });
             }
 

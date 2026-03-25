@@ -4,6 +4,7 @@ using AuthService.Features.Auth.Admin.Create;
 using AuthService.Features.Auth.Admin.CreateDoctor;
 using AuthService.Features.Auth.Admin.CreateStudent;
 using AuthService.Features.Auth.Admin.DeleteUser;
+using AuthService.Features.Auth.Admin.GetStudentsByDepartment;
 using AuthService.Features.Auth.Admin.GetUsers;
 using AuthService.Features.Auth.Admin.ToggleUserStatus;
 using AuthService.Features.Auth.Admin.UpdateUserEmail;
@@ -41,6 +42,12 @@ namespace AuthService.Features.Auth.Admin
                  .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"))
                  .WithSummary("List all users")
                  .WithDescription("Returns a paginated list of users. Accessible by Admin and SuperAdmin.");
+
+            group.MapGet("/departments/{departmentId:guid}/students", GetStudentsByDepartment)
+                 .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"))
+                 .WithTags("Admin – Students")
+                 .WithSummary("List students by department")
+                 .WithDescription("Returns all student accounts assigned to the given department.");
 
             // PUT /api/v1/auth/admin/users/{userId}/toggle-status
             group.MapPut("/users/{userId:guid}/toggle-status", ToggleUserStatus)
@@ -100,6 +107,14 @@ namespace AuthService.Features.Auth.Admin
             IMediator mediator)
         {
             var result = await mediator.Send(query);
+            return result.ToHttpResult();
+        }
+
+        private static async Task<IResult> GetStudentsByDepartment(
+            Guid departmentId,
+            IMediator mediator)
+        {
+            var result = await mediator.Send(new GetStudentsByDepartmentQuery(departmentId));
             return result.ToHttpResult();
         }
 

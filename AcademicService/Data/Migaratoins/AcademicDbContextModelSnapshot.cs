@@ -106,6 +106,9 @@ namespace AcademicService.Data.Migaratoins
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWSEQUENTIALID()");
 
+                    b.Property<Guid?>("CourseCatalogId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CoverImageUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -114,6 +117,9 @@ namespace AcademicService.Data.Migaratoins
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
@@ -139,7 +145,54 @@ namespace AcademicService.Data.Migaratoins
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CourseCatalogId");
+
+                    b.HasIndex("DepartmentId");
+
                     b.ToTable("Courses", (string)null);
+                });
+
+            modelBuilder.Entity("AcademicService.Data.Models.CourseCatalog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("CoverImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("CourseCatalogs", (string)null);
                 });
 
             modelBuilder.Entity("AcademicService.Data.Models.CourseEnrollment", b =>
@@ -173,6 +226,44 @@ namespace AcademicService.Data.Migaratoins
                     b.HasIndex("CourseId");
 
                     b.ToTable("CourseEnrollments", (string)null);
+                });
+
+            modelBuilder.Entity("AcademicService.Data.Models.Department", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("AcademicService.Data.Models.Lecture", b =>
@@ -334,10 +425,27 @@ namespace AcademicService.Data.Migaratoins
                     b.HasOne("AcademicService.Data.Models.Assignment", "Assignment")
                         .WithMany("Submissions")
                         .HasForeignKey("AssignmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Assignment");
+                });
+
+            modelBuilder.Entity("AcademicService.Data.Models.Course", b =>
+                {
+                    b.HasOne("AcademicService.Data.Models.CourseCatalog", "CourseCatalog")
+                        .WithMany("Offerings")
+                        .HasForeignKey("CourseCatalogId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AcademicService.Data.Models.Department", "Department")
+                        .WithMany("Courses")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CourseCatalog");
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("AcademicService.Data.Models.CourseEnrollment", b =>
@@ -345,7 +453,7 @@ namespace AcademicService.Data.Migaratoins
                     b.HasOne("AcademicService.Data.Models.Course", "Course")
                         .WithMany("Enrollments")
                         .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Course");
@@ -356,7 +464,7 @@ namespace AcademicService.Data.Migaratoins
                     b.HasOne("AcademicService.Data.Models.Course", "Course")
                         .WithMany("Lectures")
                         .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Course");
@@ -367,7 +475,7 @@ namespace AcademicService.Data.Migaratoins
                     b.HasOne("AcademicService.Data.Models.Lecture", "Lecture")
                         .WithOne("Pdf")
                         .HasForeignKey("AcademicService.Data.Models.LecturePdf", "LectureId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Lecture");
@@ -378,7 +486,7 @@ namespace AcademicService.Data.Migaratoins
                     b.HasOne("AcademicService.Data.Models.Lecture", "Lecture")
                         .WithOne("Video")
                         .HasForeignKey("AcademicService.Data.Models.LectureVideo", "LectureId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Lecture");
@@ -394,6 +502,16 @@ namespace AcademicService.Data.Migaratoins
                     b.Navigation("Enrollments");
 
                     b.Navigation("Lectures");
+                });
+
+            modelBuilder.Entity("AcademicService.Data.Models.CourseCatalog", b =>
+                {
+                    b.Navigation("Offerings");
+                });
+
+            modelBuilder.Entity("AcademicService.Data.Models.Department", b =>
+                {
+                    b.Navigation("Courses");
                 });
 
             modelBuilder.Entity("AcademicService.Data.Models.Lecture", b =>

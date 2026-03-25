@@ -29,6 +29,6 @@ public class AssignmentSubmissionConfiguration : IEntityTypeConfiguration<Assign
         builder.HasOne(s => s.Assignment)
             .WithMany(a => a.Submissions)
             .HasForeignKey(s => s.AssignmentId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

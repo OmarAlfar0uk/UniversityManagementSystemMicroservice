@@ -11,7 +11,7 @@ namespace AcademicService.Services
                 ".mp4", ".mov", ".avi", ".mkv", ".webm"
             };
 
-        private const long MaxFileSizeBytes = 500L * 1024 * 1024; // 500 MB
+        private const long MaxFileSizeBytes = 1024L * 1024 * 1024; // 1 GB
 
         private readonly IWebHostEnvironment _env;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -67,7 +67,7 @@ namespace AcademicService.Services
                 throw new ArgumentException($"Video format '{extension}' is not allowed. Allowed formats: {string.Join(", ", AllowedExtensions)}");
 
             if (videoFile.Length > MaxFileSizeBytes)
-                throw new ArgumentException("Video file exceeds the maximum allowed size of 500MB.");
+                throw new ArgumentException("Video file exceeds the maximum allowed size of 1GB.");
 
             var fileName = $"{Guid.NewGuid()}{extension}";
             var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");

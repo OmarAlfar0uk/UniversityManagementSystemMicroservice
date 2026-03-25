@@ -4,6 +4,8 @@ namespace AcademicService.Contracts;
 
 public interface IUnitOfWork : IDisposable
 {
+    IGenericRepository<Department> Departments { get; }
+    IGenericRepository<CourseCatalog> CourseCatalogs { get; }
     IGenericRepository<Course> Courses { get; }
     IGenericRepository<CourseEnrollment> CourseEnrollments { get; }
     IGenericRepository<Lecture> Lectures { get; }

@@ -37,7 +37,9 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
                 c.Description ?? string.Empty,
                 c.CoverImageUrl ?? string.Empty,
                 c.DoctorId,
-                0m // CompletionPercentage resolved by Progress Service
+                0m,
+                c.DepartmentId,
+                c.CourseCatalogId
             ));
 
         return new PagedResponse<CourseResponse>(

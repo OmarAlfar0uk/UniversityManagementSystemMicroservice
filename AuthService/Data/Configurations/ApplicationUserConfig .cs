@@ -33,6 +33,8 @@ namespace AuthService.Data.Configurations
             builder.HasIndex(u => u.UniversityId)
                    .IsUnique();
 
+            builder.Property(u => u.DepartmentId);
+
             builder.Property(u => u.LastLoginAt);
 
             builder.Property(u => u.DateOfBirth);

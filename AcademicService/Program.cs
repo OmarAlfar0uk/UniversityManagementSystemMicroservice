@@ -1,7 +1,9 @@
 using AcademicService.Contracts;
 using AcademicService.Data;
 using AcademicService.Features.Assignments;
+using AcademicService.Features.CourseCatalogs;
 using AcademicService.Features.Courses;
+using AcademicService.Features.Departments;
 using AcademicService.Features.LectureMaterials;
 using AcademicService.Features.Lectures;
 using AcademicService.Features.Schedule;
@@ -13,6 +15,7 @@ using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -21,9 +24,21 @@ namespace AcademicService
 {
     public class Program
     {
+        private const long MaxUploadSizeBytes = 1024L * 1024 * 1024; // 1 GB
+
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Limits.MaxRequestBodySize = MaxUploadSizeBytes;
+            });
+
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = MaxUploadSizeBytes;
+            });
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
@@ -73,6 +88,7 @@ namespace AcademicService
             builder.Services.AddScoped<IImageHelper, ImageHelper>();
             builder.Services.AddScoped<IVideoHelper, VideoHelper>();
             builder.Services.AddScoped<IFileHelper, FileHelper>();
+            builder.Services.AddHttpClient<IStudentDirectoryClient, AuthStudentDirectoryClient>();
 
             #region MediatR & Validation
             builder.Services.AddMediatR(typeof(Program).Assembly);
@@ -173,6 +189,8 @@ namespace AcademicService
             app.MapControllers();
 
             app.MapCourseEndpoints();
+            app.MapDepartmentEndpoints();
+            app.MapCourseCatalogEndpoints();
             app.MapLectureEndpoints();
             app.MapLectureMaterialEndpoints();
             app.MapAssignmentEndpoints();

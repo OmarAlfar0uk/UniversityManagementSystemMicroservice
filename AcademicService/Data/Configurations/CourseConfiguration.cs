@@ -24,6 +24,10 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
         builder.Property(c => c.CoverImageUrl)
             .HasMaxLength(500);
 
+        builder.Property(c => c.DepartmentId);
+
+        builder.Property(c => c.CourseCatalogId);
+
         builder.Property(c => c.IsActive)
             .HasDefaultValue(true);
 
@@ -42,5 +46,15 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
             .WithOne(e => e.Course)
             .HasForeignKey(e => e.CourseId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(c => c.Department)
+            .WithMany(d => d.Courses)
+            .HasForeignKey(c => c.DepartmentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(c => c.CourseCatalog)
+            .WithMany(catalog => catalog.Offerings)
+            .HasForeignKey(c => c.CourseCatalogId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

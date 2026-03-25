@@ -6,5 +6,7 @@ public record CourseResponse(
     string Description,
     string CoverImageUrl,
     Guid DoctorId,
-    decimal CompletionPercentage
+    decimal CompletionPercentage,
+    Guid? DepartmentId = null,
+    Guid? CourseCatalogId = null
 );

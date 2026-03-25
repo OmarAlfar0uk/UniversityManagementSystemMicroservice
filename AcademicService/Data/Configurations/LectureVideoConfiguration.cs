@@ -27,6 +27,6 @@ public class LectureVideoConfiguration : IEntityTypeConfiguration<LectureVideo>
         builder.HasOne(v => v.Lecture)
             .WithOne(l => l.Video)
             .HasForeignKey<LectureVideo>(v => v.LectureId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

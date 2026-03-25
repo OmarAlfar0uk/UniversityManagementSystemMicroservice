@@ -109,7 +109,8 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                     Gender = gender,
                     IsActivated = false,
                     EmailConfirmed = false,
-                    UniversityId = generatedUniversityId
+                    UniversityId = generatedUniversityId,
+                    DepartmentId = request.DepartmentId
                 };
 
                 var createResult = await _userManager.CreateAsync(student);
@@ -205,7 +206,8 @@ namespace AuthService.Features.Auth.Admin.CreateStudent
                     StudentId = student.Id,
                     Email = student.Email!,
                     ActivationCode = code,
-                    UniversityId = student.UniversityId
+                    UniversityId = student.UniversityId,
+                    DepartmentId = student.DepartmentId
                 },
                 "Student created successfully",
                 201

@@ -7,6 +7,8 @@ public class AcademicDbContext : DbContext
 {
     public AcademicDbContext(DbContextOptions<AcademicDbContext> options) : base(options) { }
 
+    public DbSet<Department> Departments => Set<Department>();
+    public DbSet<CourseCatalog> CourseCatalogs => Set<CourseCatalog>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<CourseEnrollment> CourseEnrollments => Set<CourseEnrollment>();
     public DbSet<Lecture> Lectures => Set<Lecture>();

@@ -30,7 +30,7 @@ public class LectureConfiguration : IEntityTypeConfiguration<Lecture>
         builder.HasOne(l => l.Course)
             .WithMany(c => c.Lectures)
             .HasForeignKey(l => l.CourseId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(l => l.Pdf)
             .WithOne(p => p.Lecture)

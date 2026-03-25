@@ -27,6 +27,6 @@ public class LecturePdfConfiguration : IEntityTypeConfiguration<LecturePdf>
         builder.HasOne(p => p.Lecture)
             .WithOne(l => l.Pdf)
             .HasForeignKey<LecturePdf>(p => p.LectureId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

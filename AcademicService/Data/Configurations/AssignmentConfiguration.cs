@@ -30,7 +30,7 @@ public class AssignmentConfiguration : IEntityTypeConfiguration<Assignment>
         builder.HasOne(a => a.Lecture)
             .WithMany(l => l.Assignments)
             .HasForeignKey(a => a.LectureId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(a => a.Submissions)
             .WithOne(s => s.Assignment)

@@ -8,6 +8,8 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly AcademicDbContext _context;
 
+    private IGenericRepository<Department>? _departments;
+    private IGenericRepository<CourseCatalog>? _courseCatalogs;
     private IGenericRepository<Course>? _courses;
     private IGenericRepository<CourseEnrollment>? _courseEnrollments;
     private IGenericRepository<Lecture>? _lectures;
@@ -21,6 +23,12 @@ public class UnitOfWork : IUnitOfWork
     {
         _context = context;
     }
+
+    public IGenericRepository<Department> Departments =>
+        _departments ??= new GenericRepository<Department>(_context);
+
+    public IGenericRepository<CourseCatalog> CourseCatalogs =>
+        _courseCatalogs ??= new GenericRepository<CourseCatalog>(_context);
 
     public IGenericRepository<Course> Courses =>
         _courses ??= new GenericRepository<Course>(_context);

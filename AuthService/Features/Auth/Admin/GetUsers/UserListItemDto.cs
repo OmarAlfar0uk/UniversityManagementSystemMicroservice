@@ -8,5 +8,6 @@
         public bool IsActivated { get; set; }
         public List<string> Roles { get; set; } = new();
         public DateTime CreatedAt { get; set; }
+        public Guid? DepartmentId { get; set; }
     }
 }

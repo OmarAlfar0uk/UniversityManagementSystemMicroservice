@@ -45,7 +45,9 @@ public class CreateCourseHandler : IRequestHandler<CreateCourseCommand, CourseRe
             course.Description ?? string.Empty,
             _imageHelper.GetImageUrl(course.CoverImageUrl ?? string.Empty) ?? string.Empty,
             course.DoctorId,
-            0m
+            0m,
+            course.DepartmentId,
+            course.CourseCatalogId
         );
     }
 }

@@ -30,7 +30,9 @@ public class GetCourseByIdHandler : IRequestHandler<GetCourseByIdQuery, CourseDe
             course.CoverImageUrl ?? string.Empty,
             course.DoctorId,
             lectures.Count(),
-            0m // CompletionPercentage resolved by Progress Service
+            0m,
+            course.DepartmentId,
+            course.CourseCatalogId
         );
     }
 }
