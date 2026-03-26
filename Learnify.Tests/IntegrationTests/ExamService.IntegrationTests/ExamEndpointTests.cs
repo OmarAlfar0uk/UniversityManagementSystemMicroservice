@@ -127,14 +127,14 @@ public class ExamEndpointTests : IClassFixture<ExamServiceFactory>
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", JwtHelper.StudentToken());
 
-        var payload = new { AttemptId = Guid.NewGuid(), QuestionId = Guid.NewGuid(), EarnedPoints = 5 };
+        var payload = new { EarnedPoints = 5m };
         var content = new StringContent(
             System.Text.Json.JsonSerializer.Serialize(payload),
             System.Text.Encoding.UTF8, "application/json");
 
         // Act
-        var response = await _client.PostAsync(
-            $"/api/v1/exam/admin/quiz/{TestConstants.QuizId}/grade-essay",
+        var response = await _client.PutAsync(
+            $"/api/v1/exam/admin/quizzes/{TestConstants.QuizId}/attempts/{Guid.NewGuid()}/questions/{Guid.NewGuid()}/grade",
             content);
 
         // Assert

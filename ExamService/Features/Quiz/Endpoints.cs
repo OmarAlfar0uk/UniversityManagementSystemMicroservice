@@ -67,7 +67,7 @@ public static class Endpoints
 
         // Doctor / Admin endpoints
         var doctor = app.MapGroup("/api/v1/exam/admin")
-                        .RequireAuthorization()
+                        .RequireAuthorization(p => p.RequireRole("Admin", "SuperAdmin", "Doctor"))
                         .WithTags("Exam – Quiz (Admin/Doctor)");
 
         doctor.MapPost("/lectures/{lectureId:guid}/quiz", async (

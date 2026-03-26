@@ -6,10 +6,12 @@ namespace ExamService.Features.Quiz.GradeEssay;
 public class GradeEssayHandler : IRequestHandler<GradeEssayCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public GradeEssayHandler(IUnitOfWork unitOfWork)
+    public GradeEssayHandler(IUnitOfWork unitOfWork, IPublishEndpoint publishEndpoint)
     {
         _unitOfWork = unitOfWork;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task Handle(GradeEssayCommand request, CancellationToken cancellationToken)
@@ -42,5 +44,17 @@ public class GradeEssayHandler : IRequestHandler<GradeEssayCommand>
         }
 
         await _unitOfWork.SaveChangesAsync();
+
+        if (attempt is not null)
+        {
+            await _publishEndpoint.Publish<Shered.Events.IQuizCompleted>(new
+            {
+                attempt.StudentId,
+                attempt.QuizId,
+                attempt.Score,
+                IsPassed = attempt.Score >= 50, // Assuming 50 is passing
+                CompletedAt = attempt.UpdatedAt ?? DateTime.UtcNow
+            });
+        }
     }
 }

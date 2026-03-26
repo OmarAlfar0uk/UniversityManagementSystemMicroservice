@@ -88,7 +88,7 @@ public class NotificationEndpointTests : IClassFixture<NotificationServiceFactor
             new AuthenticationHeaderValue("Bearer", JwtHelper.StudentToken());
 
         // Act
-        var response = await _client.GetAsync("/api/v1/notification?page=1&pageSize=10");
+        var response = await _client.GetAsync("/api/v1/notifications?pageNumber=1&pageSize=10");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -101,7 +101,7 @@ public class NotificationEndpointTests : IClassFixture<NotificationServiceFactor
         _client.DefaultRequestHeaders.Authorization = null;
 
         // Act
-        var response = await _client.GetAsync("/api/v1/notification?page=1&pageSize=10");
+        var response = await _client.GetAsync("/api/v1/notifications?pageNumber=1&pageSize=10");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -115,7 +115,7 @@ public class NotificationEndpointTests : IClassFixture<NotificationServiceFactor
             new AuthenticationHeaderValue("Bearer", JwtHelper.StudentToken());
 
         // Act
-        var response = await _client.PutAsync("/api/v1/notification/read-all", null);
+        var response = await _client.PutAsync("/api/v1/notifications/read-all", null);
 
         // Assert
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.NoContent);
@@ -129,7 +129,7 @@ public class NotificationEndpointTests : IClassFixture<NotificationServiceFactor
             new AuthenticationHeaderValue("Bearer", JwtHelper.StudentToken());
 
         // Act
-        var response = await _client.PutAsync($"/api/v1/notification/{Guid.NewGuid()}/read", null);
+        var response = await _client.PutAsync($"/api/v1/notifications/{Guid.NewGuid()}/read", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -143,7 +143,7 @@ public class NotificationEndpointTests : IClassFixture<NotificationServiceFactor
             new AuthenticationHeaderValue("Bearer", JwtHelper.StudentToken());
 
         // Act
-        var response = await _client.DeleteAsync($"/api/v1/notification/{Guid.NewGuid()}");
+        var response = await _client.DeleteAsync($"/api/v1/notifications/{Guid.NewGuid()}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);

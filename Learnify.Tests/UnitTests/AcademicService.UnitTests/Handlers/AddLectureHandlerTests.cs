@@ -5,6 +5,7 @@ using Moq;
 using FluentAssertions;
 using MassTransit;
 using AcademicService.Features.Lectures.AddLecture;
+using Shered.Events;
 
 namespace AcademicService.UnitTests.Handlers;
 

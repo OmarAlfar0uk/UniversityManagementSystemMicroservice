@@ -49,9 +49,9 @@ public class AuthServiceFactory : WebApplicationFactory<Auth_Service.Program>
     private static async Task SeedTestData(IServiceProvider sp)
     {
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+        var roleManager = sp.GetRequiredService<RoleManager<ApplicationRole>>();
 
-        await roleManager.CreateAsync(new IdentityRole("Student"));
+        await roleManager.CreateAsync(new ApplicationRole { Name = "Student" });
 
         var user = new ApplicationUser
         {
@@ -59,7 +59,10 @@ public class AuthServiceFactory : WebApplicationFactory<Auth_Service.Program>
             UserName = "student@test.com",
             Email = "student@test.com",
             FirstName = "Test",
-            LastName = "Student"
+            LastName = "Student",
+            UniversityId = "U12345",
+            Gender = Gender.Male,
+            IsActivated = true
         };
 
         await userManager.CreateAsync(user, "Password123!");

@@ -4,6 +4,7 @@ using ExamService.Features.Quiz.GradeEssay;
 using Moq;
 using FluentAssertions;
 using MassTransit;
+using Shered.Events;
 
 namespace ExamService.UnitTests.Handlers;
 
@@ -11,13 +12,15 @@ public class GradeEssayHandlerTests
 {
     private readonly Mock<IUnitOfWork>               _uow             = new();
     private readonly Mock<IGenericRepository<QuizAttempt>> _repo      = new();
+    private readonly Mock<IGenericRepository<Quiz>>  _quizRepo      = new();
     private readonly Mock<IPublishEndpoint>          _publishEndpoint = new();
     private readonly GradeEssayHandler               _handler;
 
     public GradeEssayHandlerTests()
     {
         _uow.Setup(x => x.QuizAttempts).Returns(_repo.Object);
-        _handler = new GradeEssayHandler(_uow.Object);
+        _uow.Setup(x => x.Quizzes).Returns(_quizRepo.Object);
+        _handler = new GradeEssayHandler(_uow.Object, _publishEndpoint.Object);
     }
 
     [Fact]
@@ -52,9 +55,10 @@ public class GradeEssayHandlerTests
         };
 
         _repo.Setup(x => x.GetByIdAsync(attemptId)).ReturnsAsync(attempt);
+        _quizRepo.Setup(x => x.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(attempt.Quiz);
         _repo.Setup(x => x.Update(It.IsAny<QuizAttempt>()));
         _uow.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
-        _publishEndpoint.Setup(x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _publishEndpoint.Setup(x => x.Publish<IQuizCompleted>(It.IsAny<object>(), It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
 
         var command = new GradeEssayCommand(attempt.Quiz.Id, attemptId, questionId, 5m);
@@ -68,6 +72,6 @@ public class GradeEssayHandlerTests
         attempt.Answers.First().IsCorrect.Should().BeTrue();
         
         _uow.Verify(x => x.SaveChangesAsync(), Times.Once);
-        _publishEndpoint.Verify(x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
+        _publishEndpoint.Verify(x => x.Publish<IQuizCompleted>(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

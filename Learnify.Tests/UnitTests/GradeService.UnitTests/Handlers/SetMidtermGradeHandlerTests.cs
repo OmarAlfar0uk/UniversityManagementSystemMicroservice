@@ -30,7 +30,7 @@ public class SetMidtermGradeHandlerTests
              .ReturnsAsync((StudentGrade?)null);
         _repo.Setup(x => x.AddAsync(It.IsAny<StudentGrade>())).Returns(Task.CompletedTask);
         _uow.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
-        _publishEndpoint.Setup(x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _publishEndpoint.Setup(x => x.Publish<Shered.Events.IGradeAdded>(It.IsAny<object>(), It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
 
         var command = new SetMidtermGradeCommand(Guid.NewGuid(), Guid.NewGuid(), 75m);
@@ -64,7 +64,7 @@ public class SetMidtermGradeHandlerTests
              .ReturnsAsync(existing);
         _repo.Setup(x => x.Update(It.IsAny<StudentGrade>()));
         _uow.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
-        _publishEndpoint.Setup(x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _publishEndpoint.Setup(x => x.Publish<Shered.Events.IGradeAdded>(It.IsAny<object>(), It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
 
         var command = new SetMidtermGradeCommand(existing.CourseId, existing.StudentId, 90m);
@@ -92,7 +92,7 @@ public class SetMidtermGradeHandlerTests
              .ReturnsAsync((StudentGrade?)null);
         _repo.Setup(x => x.AddAsync(It.IsAny<StudentGrade>())).Returns(Task.CompletedTask);
         _uow.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
-        _publishEndpoint.Setup(x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _publishEndpoint.Setup(x => x.Publish<Shered.Events.IGradeAdded>(It.IsAny<object>(), It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
 
         var command = new SetMidtermGradeCommand(Guid.NewGuid(), Guid.NewGuid(), (decimal)score);
@@ -114,7 +114,7 @@ public class SetMidtermGradeHandlerTests
              .ReturnsAsync((StudentGrade?)null);
         _repo.Setup(x => x.AddAsync(It.IsAny<StudentGrade>())).Returns(Task.CompletedTask);
         _uow.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
-        _publishEndpoint.Setup(x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _publishEndpoint.Setup(x => x.Publish<Shered.Events.IGradeAdded>(It.IsAny<object>(), It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
 
         var command = new SetMidtermGradeCommand(Guid.NewGuid(), Guid.NewGuid(), 80m);
@@ -124,7 +124,7 @@ public class SetMidtermGradeHandlerTests
 
         // Assert
         _publishEndpoint.Verify(
-            x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()),
+            x => x.Publish<Shered.Events.IGradeAdded>(It.IsAny<object>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

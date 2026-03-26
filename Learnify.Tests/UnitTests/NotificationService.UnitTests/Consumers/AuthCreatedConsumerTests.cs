@@ -26,7 +26,7 @@ public class AuthCreatedConsumerTests
         var userId = Guid.NewGuid();
         SendNotificationCommand? capturedCommand = null;
 
-        _auditLogger.Setup(x => x.LogAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+        _auditLogger.Setup(x => x.LogAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                     .Returns(Task.CompletedTask);
         _mediator.Setup(x => x.Send(It.IsAny<IRequest>(), It.IsAny<CancellationToken>()))
                  .Callback<IRequest, CancellationToken>((cmd, _) =>

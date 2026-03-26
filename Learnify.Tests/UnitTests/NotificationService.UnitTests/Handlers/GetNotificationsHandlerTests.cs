@@ -43,7 +43,7 @@ public class GetNotificationsHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Items.Should().HaveCount(10);
+        result.Data.Should().HaveCount(10);
         result.TotalCount.Should().Be(15);
         result.TotalPages.Should().Be(2);
     }
@@ -62,7 +62,7 @@ public class GetNotificationsHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Items.Should().BeEmpty();
+        result.Data.Should().BeEmpty();
         result.TotalCount.Should().Be(0);
     }
 
@@ -83,6 +83,6 @@ public class GetNotificationsHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Items.First().Title.Should().Be("New");
+        result.Data.First().Title.Should().Be("New");
     }
 }
