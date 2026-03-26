@@ -131,6 +131,9 @@ app.UseAuthorization();
 // 5. Health Check Endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "API Gateway" }));
 
+// ✅ Enable WebSocket support (required for SignalR proxying via YARP)
+app.UseWebSockets();
+
 // 9. Map YARP
 app.MapReverseProxy();
 

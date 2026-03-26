@@ -1,0 +1,8 @@
+**/bin
+**/obj
+**/.vs
+**/.git
+**/Migrations
+**/wwwroot/Uploads
+**/*.user
+**/Logs

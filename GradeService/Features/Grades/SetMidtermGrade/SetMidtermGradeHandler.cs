@@ -1,17 +1,21 @@
 using GradeService.Contracts;
 using GradeService.Data.Models;
 using GradeService.Features.Grades.GetMidtermGrade;
+using MassTransit;
 using MediatR;
+using Shered.Events;
 
 namespace GradeService.Features.Grades.SetMidtermGrade;
 
 public class SetMidtermGradeHandler : IRequestHandler<SetMidtermGradeCommand, MidtermGradeResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public SetMidtermGradeHandler(IUnitOfWork unitOfWork)
+    public SetMidtermGradeHandler(IUnitOfWork unitOfWork, IPublishEndpoint publishEndpoint)
     {
         _unitOfWork = unitOfWork;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<MidtermGradeResponse> Handle(SetMidtermGradeCommand request, CancellationToken cancellationToken)
@@ -44,6 +48,16 @@ public class SetMidtermGradeHandler : IRequestHandler<SetMidtermGradeCommand, Mi
         }
 
         await _unitOfWork.SaveChangesAsync();
+
+        // ✅ Publish event to RabbitMQ
+        await _publishEndpoint.Publish<IGradeAdded>(new
+        {
+            StudentId = request.StudentId,
+            CourseId  = request.CourseId,
+            GradeType = "Midterm",
+            Score     = request.Score
+        }, cancellationToken);
+
         return new MidtermGradeResponse(request.CourseId, request.StudentId, request.Score, letter);
     }
 
@@ -60,3 +74,4 @@ public class SetMidtermGradeHandler : IRequestHandler<SetMidtermGradeCommand, Mi
         _ => "F"
     };
 }
+

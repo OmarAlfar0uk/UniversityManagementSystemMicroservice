@@ -55,6 +55,9 @@ builder.Services.AddDbContext<MessageService.Data.MessageDbContext>(options =>
     Microsoft.EntityFrameworkCore.SqlServerDbContextOptionsExtensions.UseSqlServer(options, connectionString));
 
 builder.Services.AddScoped<MessageService.Contracts.IUnitOfWork, MessageService.Repositories.UnitOfWork>();
+builder.Services.AddScoped<MessageService.Contracts.IImageHelper, MessageService.Services.ImageHelper>();
+builder.Services.AddScoped<MessageService.Contracts.IFileHelper, MessageService.Services.FileHelper>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient("Gemini", client =>
 {
     client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");

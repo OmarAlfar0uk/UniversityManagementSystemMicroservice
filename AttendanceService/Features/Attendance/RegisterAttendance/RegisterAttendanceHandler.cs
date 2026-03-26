@@ -1,16 +1,20 @@
 using AttendanceService.Contracts;
 using AttendanceService.Data.Models;
+using MassTransit;
 using MediatR;
+using Shered.Events;
 
 namespace AttendanceService.Features.Attendance.RegisterAttendance;
 
 public class RegisterAttendanceHandler : IRequestHandler<RegisterAttendanceCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public RegisterAttendanceHandler(IUnitOfWork unitOfWork)
+    public RegisterAttendanceHandler(IUnitOfWork unitOfWork, IPublishEndpoint publishEndpoint)
     {
         _unitOfWork = unitOfWork;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task Handle(RegisterAttendanceCommand request, CancellationToken cancellationToken)
@@ -52,5 +56,15 @@ public class RegisterAttendanceHandler : IRequestHandler<RegisterAttendanceComma
 
         await _unitOfWork.AttendanceRecords.AddAsync(record);
         await _unitOfWork.SaveChangesAsync();
+
+        // ✅ Publish event to RabbitMQ
+        await _publishEndpoint.Publish<IAttendanceRegistered>(new
+        {
+            StudentId = record.StudentId,
+            CourseId  = record.CourseId,
+            LectureId = record.LectureId,
+            Date      = DateTime.UtcNow
+        }, cancellationToken);
     }
 }
+

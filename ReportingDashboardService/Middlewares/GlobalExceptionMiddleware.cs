@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace ReportingDashboardService.Middlewares
 {
@@ -26,7 +26,8 @@ namespace ReportingDashboardService.Middlewares
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception | {Method} {Path}", context.Request.Method, context.Request.Path);
+                _logger.LogError(ex, "Unhandled exception | {Method} {Path}",
+                    context.Request.Method, context.Request.Path);
                 await WriteErrorAsync(context, ex);
             }
         }
@@ -36,18 +37,10 @@ namespace ReportingDashboardService.Middlewares
             var statusCode = ex switch
             {
                 UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
-                KeyNotFoundException => StatusCodes.Status404NotFound,
-                ArgumentException => StatusCodes.Status400BadRequest,
-                InvalidOperationException => StatusCodes.Status400BadRequest,
-                _ => StatusCodes.Status500InternalServerError
-            };
-
-            var message = statusCode switch
-            {
-                StatusCodes.Status401Unauthorized => "Unauthorized",
-                StatusCodes.Status404NotFound => ex.Message,
-                StatusCodes.Status400BadRequest => ex.Message,
-                _ => "An unexpected error occurred"
+                KeyNotFoundException        => StatusCodes.Status404NotFound,
+                ArgumentException           => StatusCodes.Status400BadRequest,
+                InvalidOperationException   => StatusCodes.Status400BadRequest,
+                _                           => StatusCodes.Status500InternalServerError
             };
 
             context.Response.Clear();
@@ -56,10 +49,12 @@ namespace ReportingDashboardService.Middlewares
 
             var payload = new
             {
-                message,
+                message    = ex.Message,
                 statusCode,
-                errors = _env.IsDevelopment() ? new[] { ex.Message } : Array.Empty<string>(),
-                timestamp = DateTime.UtcNow
+                errors     = _env.IsDevelopment()
+                    ? new[] { ex.Message, ex.StackTrace }
+                    : Array.Empty<string>(),
+                timestamp  = DateTime.UtcNow
             };
 
             var options = new JsonSerializerOptions

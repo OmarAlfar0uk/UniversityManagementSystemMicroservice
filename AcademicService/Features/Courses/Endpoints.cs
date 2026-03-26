@@ -51,7 +51,7 @@ public static class Endpoints
 
         // Admin course endpoints
         var admin = app.MapGroup("/api/v1/academic/admin/courses")
-                       .RequireAuthorization()
+                       .RequireAuthorization(p => p.RequireRole("Admin","SuperAdmin", "Doctor"))
                        .WithTags("Academic – Courses (Admin)");
 
         admin.MapPost("/", async (

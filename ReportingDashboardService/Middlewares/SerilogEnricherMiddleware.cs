@@ -1,32 +1,25 @@
-﻿using System.Collections.Generic;
-using System.Security.Claims;
+using Serilog.Context;
 
 namespace ReportingDashboardService.Middlewares
 {
     public class SerilogEnricherMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ILogger<SerilogEnricherMiddleware> _logger;
 
-        public SerilogEnricherMiddleware(RequestDelegate next, ILogger<SerilogEnricherMiddleware> logger)
+        public SerilogEnricherMiddleware(RequestDelegate next)
         {
             _next = next;
-            _logger = logger;
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
-            var userId = context.User?.FindFirst("id")?.Value
-                         ?? context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                         ?? "Anonymous";
+            var correlationId = context.Request.Headers["X-Correlation-Id"].FirstOrDefault()
+                                ?? Guid.NewGuid().ToString();
 
-            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
-
-            using (_logger.BeginScope(new Dictionary<string, object?>
-            {
-                ["UserId"] = userId,
-                ["IP"] = ip
-            }))
+            using (LogContext.PushProperty("CorrelationId", correlationId))
+            using (LogContext.PushProperty("UserId",
+                context.User?.FindFirst("sub")?.Value ?? "anonymous"))
+            using (LogContext.PushProperty("RequestPath", context.Request.Path))
             {
                 await _next(context);
             }

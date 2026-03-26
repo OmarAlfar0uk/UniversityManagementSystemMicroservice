@@ -1,0 +1,84 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Learnify — docker-compose.override.yml (local development)
+# Exposes host ports and sets ASPNETCORE_URLS for hot-reload-friendly dev
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  sqlserver:
+    ports:
+      - "1433:1433"
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # RabbitMQ Management UI
+
+  seq:
+    ports:
+      - "5341:5341"     # Ingestion
+      - "8081:80"       # Seq Web UI → http://localhost:8081
+
+  # ── Microservices ────────────────────────────────────────────────────────────
+
+  authservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5001:80"
+
+  academicservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5002:80"
+
+  attendanceservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5003:80"
+
+  examservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5004:80"
+
+  gradeservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5005:80"
+
+  notificationservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5006:80"
+
+  messageservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5007:80"
+
+  progressservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5008:80"
+
+  reportingdashboardservice:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5009:80"
+
+  apigateway:
+    environment:
+      ASPNETCORE_URLS: http://+:80
+    ports:
+      - "5000:80"

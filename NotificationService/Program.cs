@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+using FluentValidation;
+using NotificationService.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -94,7 +96,25 @@ namespace NotificationService
                         ValidAudience = jwtSettings["Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
                     };
+
+                    // CRITICAL: SignalR sends token via query string for WebSocket connections
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) &&
+                                path.StartsWithSegments("/hubs/notifications"))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
+
+            builder.Services.AddSignalR();
 
             builder.Services.AddAuthorization();
             #endregion
@@ -103,6 +123,11 @@ namespace NotificationService
             builder.Services.AddMassTransit(x =>
             {
                 x.AddConsumer<AuthCreatedConsumer>();
+                x.AddConsumer<LectureAddedConsumer>();
+                x.AddConsumer<AssignmentAddedConsumer>();
+                x.AddConsumer<AttendanceRegisteredConsumer>();
+                x.AddConsumer<QuizCompletedConsumer>();
+                x.AddConsumer<GradeAddedConsumer>();
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
@@ -116,6 +141,31 @@ namespace NotificationService
                     cfg.ReceiveEndpoint("auth-created-queue", e =>
                     {
                         e.ConfigureConsumer<AuthCreatedConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint("lecture-added-queue", e =>
+                    {
+                        e.ConfigureConsumer<LectureAddedConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint("assignment-added-queue", e =>
+                    {
+                        e.ConfigureConsumer<AssignmentAddedConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint("attendance-registered-queue", e =>
+                    {
+                        e.ConfigureConsumer<AttendanceRegisteredConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint("quiz-completed-queue", e =>
+                    {
+                        e.ConfigureConsumer<QuizCompletedConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint("grade-added-queue", e =>
+                    {
+                        e.ConfigureConsumer<GradeAddedConsumer>(context);
                     });
                 });
             });
@@ -141,6 +191,9 @@ namespace NotificationService
             app.MapControllers();
 
             app.MapNotificationEndpoints();
+
+            // ✅ SignalR hub endpoint
+            app.MapHub<NotificationHub>("/hubs/notifications");
 
             app.Run();
         }

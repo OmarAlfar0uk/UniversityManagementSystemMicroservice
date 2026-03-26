@@ -9,6 +9,18 @@
   <Project Path="EmailService/EmailService.csproj" />
   <Project Path="ExamService/ExamService.csproj" />
   <Project Path="GradeService/GradeService.csproj" />
+  <Folder Name="/Tests/">
+    <Project Path="Learnify.Tests/UnitTests/AcademicService.UnitTests/AcademicService.UnitTests.csproj" />
+    <Project Path="Learnify.Tests/UnitTests/AuthService.UnitTests/AuthService.UnitTests.csproj" />
+    <Project Path="Learnify.Tests/UnitTests/ExamService.UnitTests/ExamService.UnitTests.csproj" />
+    <Project Path="Learnify.Tests/UnitTests/GradeService.UnitTests/GradeService.UnitTests.csproj" />
+    <Project Path="Learnify.Tests/UnitTests/NotificationService.UnitTests/NotificationService.UnitTests.csproj" />
+    <Project Path="Learnify.Tests/IntegrationTests/AcademicService.IntegrationTests/AcademicService.IntegrationTests.csproj" />
+    <Project Path="Learnify.Tests/IntegrationTests/AuthService.IntegrationTests/AuthService.IntegrationTests.csproj" />
+    <Project Path="Learnify.Tests/IntegrationTests/ExamService.IntegrationTests/ExamService.IntegrationTests.csproj" />
+    <Project Path="Learnify.Tests/IntegrationTests/GradeService.IntegrationTests/GradeService.IntegrationTests.csproj" />
+    <Project Path="Learnify.Tests/IntegrationTests/NotificationService.IntegrationTests/NotificationService.IntegrationTests.csproj" />
+  </Folder>
   <Project Path="MessageService/MessageService.csproj" />
   <Project Path="NotificationService/NotificationService.csproj" />
   <Project Path="ProgressService/ProgressService.csproj" />

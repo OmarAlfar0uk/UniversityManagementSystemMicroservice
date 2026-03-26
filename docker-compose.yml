@@ -1,0 +1,357 @@
+name: learnify
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Learnify — docker-compose.yml (production-style)
+# Override ports + dev mounts live in docker-compose.override.yml
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: learnify-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: ${SA_PASSWORD}
+      MSSQL_PID: ${MSSQL_PID}
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - learnify-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${SA_PASSWORD}", "-Q", "SELECT 1", "-No"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: learnify-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - learnify-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  seq:
+    image: datalust/seq:latest
+    container_name: learnify-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_FIRSTRUN_ADMINPASSWORD}
+    volumes:
+      - seq-data:/data
+    networks:
+      - learnify-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Microservices ────────────────────────────────────────────────────────────
+
+  authservice:
+    build:
+      context: .
+      dockerfile: AuthService/Dockerfile
+    container_name: learnify-auth
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UniversitySystem.Auth;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+    volumes:
+      - ./AuthService/wwwroot:/app/wwwroot
+    networks:
+      - learnify-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  academicservice:
+    build:
+      context: .
+      dockerfile: AcademicService/Dockerfile
+    container_name: learnify-academic
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UniversitySystem.Academic;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+    volumes:
+      - ./AcademicService/wwwroot:/app/wwwroot
+    networks:
+      - learnify-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  attendanceservice:
+    build:
+      context: .
+      dockerfile: AttendanceService/Dockerfile
+    container_name: learnify-attendance
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UniversitySystem.Attendance;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+    volumes:
+      - ./AttendanceService/wwwroot:/app/wwwroot
+    networks:
+      - learnify-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  examservice:
+    build:
+      context: .
+      dockerfile: ExamService/Dockerfile
+    container_name: learnify-exam
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UniversitySystem.Exam;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+    volumes:
+      - ./ExamService/wwwroot:/app/wwwroot
+    networks:
+      - learnify-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gradeservice:
+    build:
+      context: .
+      dockerfile: GradeService/Dockerfile
+    container_name: learnify-grade
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UniversitySystem.Grade;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+    volumes:
+      - ./GradeService/wwwroot:/app/wwwroot
+    networks:
+      - learnify-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notificationservice:
+    build:
+      context: .
+      dockerfile: NotificationService/Dockerfile
+    container_name: learnify-notification
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UniversitySystem.Notification;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+    volumes:
+      - ./NotificationService/wwwroot:/app/wwwroot
+    networks:
+      - learnify-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  messageservice:
+    build:
+      context: .
+      dockerfile: MessageService/Dockerfile
+    container_name: learnify-message
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UniversitySystem.Message;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+      GeminiSettings__ApiKey: ${GEMINI_API_KEY}
+    volumes:
+      - ./MessageService/wwwroot:/app/wwwroot
+    networks:
+      - learnify-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  progressservice:
+    build:
+      context: .
+      dockerfile: ProgressService/Dockerfile
+    container_name: learnify-progress
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UniversitySystem.Progress;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+    volumes:
+      - ./ProgressService/wwwroot:/app/wwwroot
+    networks:
+      - learnify-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  reportingdashboardservice:
+    build:
+      context: .
+      dockerfile: ReportingDashboardService/Dockerfile
+    container_name: learnify-reporting
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
+      SEQ_URL: http://seq:5341
+      # Internal service URLs for HTTP aggregation
+      Services__Auth: http://authservice:80
+      Services__Academic: http://academicservice:80
+      Services__Attendance: http://attendanceservice:80
+      Services__Exam: http://examservice:80
+      Services__Grade: http://gradeservice:80
+      Services__Progress: http://progressservice:80
+      Services__Message: http://messageservice:80
+    networks:
+      - learnify-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  apigateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    container_name: learnify-gateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      JwtSettings__SecretKey: ${JWT_KEY}
+      JwtSettings__Issuer: ${JWT_ISSUER}
+      JwtSettings__Audience: ${JWT_AUDIENCE}
+    networks:
+      - learnify-network
+    depends_on:
+      - authservice
+      - academicservice
+      - attendanceservice
+      - examservice
+      - gradeservice
+      - notificationservice
+      - messageservice
+      - progressservice
+      - reportingdashboardservice
+    restart: unless-stopped
+
+# ── Volumes ──────────────────────────────────────────────────────────────────
+volumes:
+  sqlserver-data:
+  rabbitmq-data:
+  seq-data:
+
+# ── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  learnify-network:
+    driver: bridge

@@ -1,44 +1,196 @@
-﻿using Microsoft.EntityFrameworkCore;
+using System.Reflection;
+using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using ReportingDashboardService.Contracts;
+using ReportingDashboardService.Features.Admin;
+using ReportingDashboardService.Features.Doctor;
+using ReportingDashboardService.Features.Parent;
+using ReportingDashboardService.Features.Student;
 using ReportingDashboardService.Middlewares;
 using ReportingDashboardService.Services;
+using Serilog;
+using System.Text;
 
-namespace ReportingDashboardService
+var builder = WebApplication.CreateBuilder(args);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Serilog
+// ─────────────────────────────────────────────────────────────────────────────
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/reporting-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Swagger
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
 {
-    public class Program
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
-        public static void Main(string[] args)
+        Title   = "Reporting Dashboard Service",
+        Version = "v1",
+        Description = "Aggregation reporting microservice — no database, pure HTTP aggregation"
+    });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name        = "Authorization",
+        Type        = SecuritySchemeType.Http,
+        Scheme      = "bearer",
+        BearerFormat= "JWT",
+        In          = ParameterLocation.Header,
+        Description = "Enter your JWT token. Example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
-            builder.Services.AddHttpContextAccessor();
-            builder.Services.AddScoped<IReportingAuditLogger, ReportingAuditLogger>();
-            //#region Database
-            //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            //builder.Services.AddDbContext<UniversitySystemAuthContext>(options =>
-            //    options.UseSqlServer(connectionString));
-            //#endregion
-            var app = builder.Build();
-
-            if (app.Environment.IsDevelopment())
+            new OpenApiSecurityScheme
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseMiddleware<GlobalExceptionMiddleware>();
-            app.UseMiddleware<CorrelationIdMiddleware>();
-            app.UseMiddleware<SerilogEnricherMiddleware>();
-
-            app.UseHttpsRedirection();
-            app.UseAuthorization();
-            app.MapControllers();
-
-            app.Run();
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id   = "Bearer"
+                }
+            },
+            Array.Empty<string>()
         }
-    }
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MediatR + FluentValidation
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssemblyContaining<Program>());
+
+builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HttpContext accessor (required for JWT / Correlation-Id forwarding)
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddHttpContextAccessor();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Named HTTP Clients
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddHttpClient("AuthService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Auth"]!);
+    client.Timeout     = TimeSpan.FromSeconds(10);
+});
+
+builder.Services.AddHttpClient("AcademicService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Academic"]!);
+    client.Timeout     = TimeSpan.FromSeconds(10);
+});
+
+builder.Services.AddHttpClient("AttendanceService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Attendance"]!);
+    client.Timeout     = TimeSpan.FromSeconds(10);
+});
+
+builder.Services.AddHttpClient("ExamService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Exam"]!);
+    client.Timeout     = TimeSpan.FromSeconds(10);
+});
+
+builder.Services.AddHttpClient("GradeService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Grade"]!);
+    client.Timeout     = TimeSpan.FromSeconds(10);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Service Clients (DI)
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddScoped<IAuthServiceClient,       AuthServiceClient>();
+builder.Services.AddScoped<IAcademicServiceClient,   AcademicServiceClient>();
+builder.Services.AddScoped<IAttendanceServiceClient, AttendanceServiceClient>();
+builder.Services.AddScoped<IGradeServiceClient,      GradeServiceClient>();
+builder.Services.AddScoped<IExamServiceClient,       ExamServiceClient>();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Memory Cache (for optional Admin dashboard caching)
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddMemoryCache();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JWT Authentication
+// ─────────────────────────────────────────────────────────────────────────────
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey   = jwtSettings["SecretKey"]
+    ?? throw new InvalidOperationException("JWT SecretKey is not configured.");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer           = true,
+            ValidateAudience         = true,
+            ValidateLifetime         = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer              = jwtSettings["Issuer"],
+            ValidAudience            = jwtSettings["Audience"],
+            IssuerSigningKey         = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(secretKey))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Build
+// ─────────────────────────────────────────────────────────────────────────────
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Reporting Dashboard Service v1"));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Middleware Pipeline
+// ─────────────────────────────────────────────────────────────────────────────
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseMiddleware<SerilogEnricherMiddleware>();
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Endpoint Registration
+// ─────────────────────────────────────────────────────────────────────────────
+app.MapStudentReportEndpoints();
+app.MapParentReportEndpoints();
+app.MapAdminReportEndpoints();
+app.MapDoctorReportEndpoints();
+
+// Health check
+app.MapGet("/health", () => Results.Ok(new
+{
+    status  = "healthy",
+    service = "ReportingDashboardService",
+    utc     = DateTime.UtcNow
+}));
+
+app.Run();

@@ -1,17 +1,21 @@
 using GradeService.Contracts;
 using GradeService.Data.Models;
 using GradeService.Features.Grades.GetFinalGrade;
+using MassTransit;
 using MediatR;
+using Shered.Events;
 
 namespace GradeService.Features.Grades.SetFinalGrade;
 
 public class SetFinalGradeHandler : IRequestHandler<SetFinalGradeCommand, FinalGradeResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public SetFinalGradeHandler(IUnitOfWork unitOfWork)
+    public SetFinalGradeHandler(IUnitOfWork unitOfWork, IPublishEndpoint publishEndpoint)
     {
         _unitOfWork = unitOfWork;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<FinalGradeResponse> Handle(SetFinalGradeCommand request, CancellationToken cancellationToken)
@@ -33,8 +37,8 @@ public class SetFinalGradeHandler : IRequestHandler<SetFinalGradeCommand, FinalG
         {
             var grade = new StudentGrade
             {
-                Id = Guid.NewGuid(),
-                CourseId = request.CourseId,
+                Id        = Guid.NewGuid(),
+                CourseId  = request.CourseId,
                 StudentId = request.StudentId,
                 FinalScore = request.Score,
                 TotalScore = request.Score,
@@ -45,6 +49,16 @@ public class SetFinalGradeHandler : IRequestHandler<SetFinalGradeCommand, FinalG
         }
 
         await _unitOfWork.SaveChangesAsync();
+
+        // ✅ Publish event to RabbitMQ
+        await _publishEndpoint.Publish<IGradeAdded>(new
+        {
+            StudentId = request.StudentId,
+            CourseId  = request.CourseId,
+            GradeType = "Final",
+            Score     = request.Score
+        }, cancellationToken);
+
         return new FinalGradeResponse(request.CourseId, request.StudentId, request.Score, letter, points);
     }
 

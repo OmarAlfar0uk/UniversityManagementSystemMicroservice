@@ -1,37 +1,33 @@
-﻿namespace ReportingDashboardService.Middlewares
+namespace ReportingDashboardService.Middlewares
 {
     public class CorrelationIdMiddleware
     {
-        public const string HeaderName = "X-Correlation-Id";
-
         private readonly RequestDelegate _next;
-        private readonly ILogger<CorrelationIdMiddleware> _logger;
+        private const string CorrelationIdHeader = "X-Correlation-Id";
 
-        public CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
+        public CorrelationIdMiddleware(RequestDelegate next)
         {
             _next = next;
-            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            if (!context.Request.Headers.TryGetValue(HeaderName, out var correlationId) || string.IsNullOrWhiteSpace(correlationId))
+            if (!context.Request.Headers.ContainsKey(CorrelationIdHeader))
             {
-                correlationId = Guid.NewGuid().ToString();
+                context.Request.Headers[CorrelationIdHeader] = Guid.NewGuid().ToString();
             }
-
-            context.Items[HeaderName] = correlationId.ToString();
 
             context.Response.OnStarting(() =>
             {
-                context.Response.Headers[HeaderName] = correlationId.ToString();
+                if (!context.Response.Headers.ContainsKey(CorrelationIdHeader))
+                {
+                    context.Response.Headers[CorrelationIdHeader] =
+                        context.Request.Headers[CorrelationIdHeader];
+                }
                 return Task.CompletedTask;
             });
 
-            using (_logger.BeginScope("{CorrelationId}", correlationId.ToString()))
-            {
-                await _next(context);
-            }
+            await _next(context);
         }
     }
 }
