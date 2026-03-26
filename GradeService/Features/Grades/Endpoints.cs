@@ -41,7 +41,7 @@ public static class Endpoints
         }).RequireAuthorization().WithTags("Grade – Student").WithSummary("Get GPA (Student)");
 
         var doctor = app.MapGroup("/api/v1/grade/admin/courses")
-                        .RequireAuthorization()
+                        .RequireAuthorization(p => p.RequireRole("Admin", "Doctor"))
                         .WithTags("Grade – Doctor/Admin");
 
         doctor.MapPut("/{courseId:guid}/students/{studentId:guid}/midterm", async (

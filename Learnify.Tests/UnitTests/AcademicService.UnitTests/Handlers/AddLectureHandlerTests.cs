@@ -58,7 +58,7 @@ public class AddLectureHandlerTests
         _enrollmentRepo.Setup(x => x.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<CourseEnrollment, bool>>>()))
                         .ReturnsAsync(course.Enrollments);
         _uow.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
-        _publishEndpoint.Setup(x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _publishEndpoint.Setup(x => x.Publish<ILectureAdded>(It.IsAny<object>(), It.IsAny<CancellationToken>()))
                         .Returns(Task.CompletedTask);
 
         var command = new AddLectureCommand(courseId, "Lecture 1", 1, null);
@@ -72,6 +72,6 @@ public class AddLectureHandlerTests
         
         _lectureRepo.Verify(x => x.AddAsync(It.IsAny<Lecture>()), Times.Once);
         _uow.Verify(x => x.SaveChangesAsync(), Times.Once);
-        _publishEndpoint.Verify(x => x.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once); // Publishes ILectureAdded
+        _publishEndpoint.Verify(x => x.Publish<ILectureAdded>(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once); // Publishes ILectureAdded
     }
 }
