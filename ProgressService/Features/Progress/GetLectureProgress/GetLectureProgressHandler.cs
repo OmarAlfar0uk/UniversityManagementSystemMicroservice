@@ -20,8 +20,8 @@ public class GetLectureProgressHandler : IRequestHandler<GetLectureProgressQuery
         return new LectureProgressResponse(
             request.LectureId,
             request.StudentId,
-            progress?.IsCompleted ?? false,
-            progress?.CompletedAt
+            progress?.CompletionPercentage >= 100m,
+            progress?.CompletionPercentage >= 100m ? progress?.UpdatedAt : null
         );
     }
 }

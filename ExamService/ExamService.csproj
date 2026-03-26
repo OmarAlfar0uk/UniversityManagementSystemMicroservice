@@ -7,6 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\**" />
+    <Compile Remove="Seeding\**" />
+    <Content Remove="Models\**" />
+    <Content Remove="Seeding\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <EmbeddedResource Remove="Seeding\**" />
+    <None Remove="Models\**" />
+    <None Remove="Seeding\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.5" />
@@ -33,9 +44,7 @@
     <Folder Include="Data\Configurations\" />
     <Folder Include="Features\" />
     <Folder Include="Middlewares\" />
-    <Folder Include="Models\" />
     <Folder Include="Services\" />
-    <Folder Include="Seeding\" />
     <Folder Include="Repositories\" />
   </ItemGroup>
 

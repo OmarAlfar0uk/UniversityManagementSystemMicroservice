@@ -27,53 +27,19 @@ public class UpdateProgressHandler : IRequestHandler<UpdateProgressCommand>
                 LectureId = request.LectureId,
                 CourseId = request.CourseId,
                 StudentId = request.StudentId,
-                IsCompleted = true,
-                CompletedAt = DateTime.UtcNow,
+                CompletionPercentage = 100m,
+                IsVideoWatched = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
             await _unitOfWork.LectureProgresses.AddAsync(lectureProgress);
         }
-        else if (!lectureProgress.IsCompleted)
+        else if (lectureProgress.CompletionPercentage < 100m)
         {
-            lectureProgress.IsCompleted = true;
-            lectureProgress.CompletedAt = DateTime.UtcNow;
+            lectureProgress.CompletionPercentage = 100m;
+            lectureProgress.IsVideoWatched = true;
             lectureProgress.UpdatedAt = DateTime.UtcNow;
             _unitOfWork.LectureProgresses.Update(lectureProgress);
-        }
-
-        // 2. Recalculate course progress
-        var allLectureProgresses = await _unitOfWork.LectureProgresses.GetAllAsync(
-            p => p.CourseId == request.CourseId && p.StudentId == request.StudentId);
-
-        var completed = allLectureProgresses.Count(p => p.IsCompleted);
-        var percentage = request.TotalLecturesInCourse > 0
-            ? Math.Round((decimal)completed / request.TotalLecturesInCourse * 100, 2)
-            : 0m;
-
-        var courseProgress = await _unitOfWork.CourseProgresses.FindAsync(
-            p => p.CourseId == request.CourseId && p.StudentId == request.StudentId);
-
-        if (courseProgress is null)
-        {
-            courseProgress = new CourseProgress
-            {
-                Id = Guid.NewGuid(),
-                CourseId = request.CourseId,
-                StudentId = request.StudentId,
-                CompletedLectures = completed,
-                CompletionPercentage = percentage,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await _unitOfWork.CourseProgresses.AddAsync(courseProgress);
-        }
-        else
-        {
-            courseProgress.CompletedLectures = completed;
-            courseProgress.CompletionPercentage = percentage;
-            courseProgress.UpdatedAt = DateTime.UtcNow;
-            _unitOfWork.CourseProgresses.Update(courseProgress);
         }
 
         await _unitOfWork.SaveChangesAsync();

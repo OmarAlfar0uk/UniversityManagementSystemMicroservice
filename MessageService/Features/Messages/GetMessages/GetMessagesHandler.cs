@@ -18,13 +18,15 @@ public class GetMessagesHandler : IRequestHandler<GetMessagesQuery, PagedRespons
         var messages = await _unitOfWork.Messages.GetAllAsync(m => m.ConversationId == request.ConversationId);
 
         var ordered = messages.OrderByDescending(m => m.SentAt).ToList();
-        var total = ordered.Count;
+        var totalCount = ordered.Count;
+        var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
 
         var items = ordered
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(m => new MessageResponse(m.Id, m.SenderId, m.Content, m.SentAt, m.IsRead));
+            .Select(m => new MessageResponse(m.Id, m.SenderId, m.Content ?? string.Empty, m.SentAt, m.IsRead))
+            .ToList();
 
-        return new PagedResponse<MessageResponse>(items, total, request.PageNumber, request.PageSize);
+        return new PagedResponse<MessageResponse>(items, request.PageNumber, request.PageSize, totalCount, totalPages);
     }
 }

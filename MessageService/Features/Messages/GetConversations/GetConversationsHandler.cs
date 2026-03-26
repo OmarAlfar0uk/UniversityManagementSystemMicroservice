@@ -16,20 +16,22 @@ public class GetConversationsHandler : IRequestHandler<GetConversationsQuery, Pa
         GetConversationsQuery request, CancellationToken cancellationToken)
     {
         var conversations = await _unitOfWork.Conversations.GetAllAsync(
-            c => c.ParticipantAId == request.UserId || c.ParticipantBId == request.UserId);
+            c => c.StudentId == request.UserId || c.DoctorId == request.UserId);
 
-        var ordered = conversations.OrderByDescending(c => c.LastMessageAt).ToList();
+        var ordered = conversations.OrderByDescending(c => c.UpdatedAt).ToList();
         var total = ordered.Count;
+        var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
 
         var items = ordered
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(c =>
             {
-                var otherUserId = c.ParticipantAId == request.UserId ? c.ParticipantBId : c.ParticipantAId;
-                return new ConversationResponse(c.Id, otherUserId, c.LastMessageAt);
-            });
+                var otherUserId = c.StudentId == request.UserId ? c.DoctorId : c.StudentId;
+                return new ConversationResponse(c.Id, otherUserId, c.UpdatedAt);
+            })
+            .ToList();
 
-        return new PagedResponse<ConversationResponse>(items, total, request.PageNumber, request.PageSize);
+        return new PagedResponse<ConversationResponse>(items, request.PageNumber, request.PageSize, total, totalPages);
     }
 }

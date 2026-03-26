@@ -65,11 +65,27 @@ public class AskRashedHandler(
 
         // 2. Build Gemini contents array from history
         var contents = new List<GeminiContent>();
+        string? lastRole = null;
+        
         foreach (var msg in history)
         {
             var role = msg.Role == AiRole.Assistant ? "model" : "user";
+            
+            // Gemini strictly requires alternating roles and the first must be 'user'
+            if (lastRole == null && role == "model") continue; 
+            if (role == lastRole) continue; 
+            
             contents.Add(new GeminiContent(role, [new GeminiPart(msg.Content)]));
+            lastRole = role;
         }
+
+        // We are about to add a new 'user' message. If the history ended with 'user',
+        // Gemini will reject it. We drop the trailing 'user' from history to keep alternating pattern.
+        if (lastRole == "user" && contents.Count > 0)
+        {
+            contents.RemoveAt(contents.Count - 1);
+        }
+
         // Add the new user message
         contents.Add(new GeminiContent("user", [new GeminiPart(request.Message)]));
 
@@ -82,7 +98,11 @@ public class AskRashedHandler(
 
         var url = $"models/{settings.Model}:generateContent?key={settings.ApiKey}";
         var httpResponse = await client.PostAsJsonAsync(url, requestBody, ct);
-        httpResponse.EnsureSuccessStatusCode();
+        if (!httpResponse.IsSuccessStatusCode)
+        {
+            var errorBody = await httpResponse.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException($"Gemini API Error: {errorBody}");
+        }
 
         var geminiResponse = await httpResponse.Content.ReadFromJsonAsync<GeminiResponse>(
             cancellationToken: ct)

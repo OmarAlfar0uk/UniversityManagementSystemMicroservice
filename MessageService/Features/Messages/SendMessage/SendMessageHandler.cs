@@ -17,17 +17,16 @@ public class SendMessageHandler : IRequestHandler<SendMessageCommand, SendMessag
     {
         // Find or create conversation
         var conversation = await _unitOfWork.Conversations.FindAsync(
-            c => (c.ParticipantAId == request.SenderId && c.ParticipantBId == request.ReceiverId) ||
-                 (c.ParticipantAId == request.ReceiverId && c.ParticipantBId == request.SenderId));
+            c => (c.StudentId == request.SenderId && c.DoctorId == request.ReceiverId) ||
+                 (c.StudentId == request.ReceiverId && c.DoctorId == request.SenderId));
 
         if (conversation is null)
         {
             conversation = new Conversation
             {
                 Id = Guid.NewGuid(),
-                ParticipantAId = request.SenderId,
-                ParticipantBId = request.ReceiverId,
-                LastMessageAt = DateTime.UtcNow,
+                StudentId = request.SenderId,
+                DoctorId = request.ReceiverId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -35,7 +34,6 @@ public class SendMessageHandler : IRequestHandler<SendMessageCommand, SendMessag
         }
         else
         {
-            conversation.LastMessageAt = DateTime.UtcNow;
             conversation.UpdatedAt = DateTime.UtcNow;
             _unitOfWork.Conversations.Update(conversation);
         }
