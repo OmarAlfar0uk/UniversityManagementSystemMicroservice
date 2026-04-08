@@ -101,8 +101,7 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Pipeline Order
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -116,7 +115,7 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("http://localhost:5007/swagger/v1/swagger.json", "Message Service");
         c.SwaggerEndpoint("http://localhost:5008/swagger/v1/swagger.json", "Progress Service");
     });
-}
+
 
 app.UseSerilogRequestLogging();
 app.UseCors("AllowAll");

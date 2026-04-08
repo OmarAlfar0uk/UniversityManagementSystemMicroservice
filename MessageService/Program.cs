@@ -95,14 +95,14 @@ builder.Logging.AddConsole();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
+//}
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Message Service v1");
     });
-}
 
 app.UseMiddleware<MessageService.Middlewares.GlobalExceptionMiddleware>();
 

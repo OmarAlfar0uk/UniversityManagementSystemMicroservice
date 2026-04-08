@@ -173,11 +173,11 @@ namespace NotificationService
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
-            {
+            //if (app.Environment.IsDevelopment())
+            //{
+            //}
                 app.UseSwagger();
                 app.UseSwaggerUI();
-            }
 
             app.UseCors("AllowAll");
             app.UseMiddleware<GlobalExceptionMiddleware>();

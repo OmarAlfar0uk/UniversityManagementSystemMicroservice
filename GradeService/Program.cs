@@ -129,12 +129,13 @@ namespace GradeService
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
+            //if (app.Environment.IsDevelopment())
+            //{
+            //    app.UseSwagger();
+            //    app.UseSwaggerUI();
+            //}
+            app.UseSwagger();
+            app.UseSwaggerUI();
             app.UseCors("AllowAll");
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseMiddleware<CorrelationIdMiddleware>();

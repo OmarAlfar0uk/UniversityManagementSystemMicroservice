@@ -158,12 +158,12 @@ builder.Services.AddAuthorization();
 // ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
+//}
     app.UseSwagger();
     app.UseSwaggerUI(c =>
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Reporting Dashboard Service v1"));
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Middleware Pipeline
