@@ -4,19 +4,17 @@ namespace ExamService.Features.Internal;
 
 public static class InternalEndpoints
 {
-    private static bool IsInternalRequest(HttpContext ctx) =>
-        ctx.Request.Headers["X-Internal-Request"] == "true";
-
     public static void MapInternalEndpoints(this IEndpointRouteBuilder app)
     {
-        // GET /api/v1/exam/internal/students/{studentId}/quiz-results
-        app.MapGet("/api/v1/exam/internal/students/{studentId:guid}/quiz-results", async (
-            Guid studentId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
-        {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
+        var group = app.MapGroup("/api/v1/exam/internal")
+                       .RequireAuthorization()
+                       .WithTags("Internal \u2013 Exam");
 
+        // GET /api/v1/exam/internal/students/{studentId}/quiz-results
+        group.MapGet("/students/{studentId:guid}/quiz-results", async (
+            Guid studentId,
+            IUnitOfWork uow) =>
+        {
             var attempts = await uow.QuizAttempts.GetAllAsync(a => a.StudentId == studentId);
             var result   = new List<object>();
 
@@ -37,26 +35,20 @@ public static class InternalEndpoints
         });
 
         // GET /api/v1/exam/internal/doctors/{doctorId}/pending-essays/count
-        app.MapGet("/api/v1/exam/internal/doctors/{doctorId:guid}/pending-essays/count", async (
+        group.MapGet("/doctors/{doctorId:guid}/pending-essays/count", async (
             Guid doctorId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
+            IUnitOfWork uow) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             // Count all ungraded (IsCorrect == null) quiz answers
             var count = await uow.QuizAnswers.CountAsync(a => a.IsCorrect == null);
             return Results.Ok(count);
         });
 
         // GET /api/v1/exam/internal/courses/{courseId}/quiz-stats
-        app.MapGet("/api/v1/exam/internal/courses/{courseId:guid}/quiz-stats", async (
+        group.MapGet("/courses/{courseId:guid}/quiz-stats", async (
             Guid courseId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
+            IUnitOfWork uow) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var quizzes = await uow.Quizzes.GetAllAsync(q => q.CourseId == courseId);
             var result  = new List<object>();
 
