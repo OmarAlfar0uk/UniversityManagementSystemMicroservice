@@ -4,39 +4,34 @@ namespace GradeService.Features.Internal;
 
 public static class InternalEndpoints
 {
-    private static bool IsInternalRequest(HttpContext ctx) =>
-        ctx.Request.Headers["X-Internal-Request"] == "true";
-
     public static void MapInternalEndpoints(this IEndpointRouteBuilder app)
     {
-        // GET /api/v1/grade/internal/students/{studentId}
-        app.MapGet("/api/v1/grade/internal/students/{studentId:guid}", async (
-            Guid studentId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
-        {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
+        var group = app.MapGroup("/api/v1/grade/internal")
+                       .RequireAuthorization()
+                       .WithTags("Internal \u2013 Grade");
 
+        // GET /api/v1/grade/internal/students/{studentId}
+        group.MapGet("/students/{studentId:guid}", async (
+            Guid studentId,
+            IUnitOfWork uow) =>
+        {
             var grades = await uow.StudentGrades.GetAllAsync(g => g.StudentId == studentId);
             var result = grades.Select(g => new
             {
-                courseId      = g.CourseId,
-                midtermScore  = g.MidtermScore,
-                finalScore    = g.FinalScore,
-                totalScore    = g.TotalScore
+                courseId     = g.CourseId,
+                midtermScore = g.MidtermScore,
+                finalScore   = g.FinalScore,
+                totalScore   = g.TotalScore
             });
 
             return Results.Ok(result);
         });
 
         // GET /api/v1/grade/internal/students/{studentId}/gpa
-        app.MapGet("/api/v1/grade/internal/students/{studentId:guid}/gpa", async (
+        group.MapGet("/students/{studentId:guid}/gpa", async (
             Guid studentId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
+            IUnitOfWork uow) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var grades = await uow.StudentGrades.GetAllAsync(g => g.StudentId == studentId);
             var gradeList = grades.ToList();
 
@@ -50,13 +45,10 @@ public static class InternalEndpoints
         });
 
         // GET /api/v1/grade/internal/courses/{courseId}/grades
-        app.MapGet("/api/v1/grade/internal/courses/{courseId:guid}/grades", async (
+        group.MapGet("/courses/{courseId:guid}/grades", async (
             Guid courseId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
+            IUnitOfWork uow) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var grades = await uow.StudentGrades.GetAllAsync(g => g.CourseId == courseId);
             var result = grades.Select(g => new
             {
@@ -70,13 +62,10 @@ public static class InternalEndpoints
         });
 
         // GET /api/v1/grade/internal/courses/{courseId}/average
-        app.MapGet("/api/v1/grade/internal/courses/{courseId:guid}/average", async (
+        group.MapGet("/courses/{courseId:guid}/average", async (
             Guid courseId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
+            IUnitOfWork uow) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var grades = await uow.StudentGrades.GetAllAsync(g => g.CourseId == courseId);
             var gradeList = grades.ToList();
 

@@ -1,37 +1,31 @@
 using Auth.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.Features.Internal;
 
 public static class InternalEndpoints
 {
-    private static bool IsInternalRequest(HttpContext ctx) =>
-        ctx.Request.Headers["X-Internal-Request"] == "true";
-
     public static void MapInternalEndpoints(this IEndpointRouteBuilder app)
     {
-        // GET /api/v1/auth/internal/users/count?role=Student
-        app.MapGet("/api/v1/auth/internal/users/count", async (
-            string role,
-            UserManager<ApplicationUser> userManager,
-            HttpContext ctx) =>
-        {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
+        var group = app.MapGroup("/api/v1/auth/internal")
+                       .RequireAuthorization()
+                       .WithTags("Internal \u2013 Auth");
 
+        // GET /api/v1/auth/internal/users/count?role=Student
+        group.MapGet("/users/count", async (
+            string role,
+            UserManager<ApplicationUser> userManager) =>
+        {
             var usersInRole = await userManager.GetUsersInRoleAsync(role);
             var count = usersInRole.Count(u => u.IsActivated);
             return Results.Ok(count);
         });
 
         // GET /api/v1/auth/internal/users/{userId}
-        app.MapGet("/api/v1/auth/internal/users/{userId:guid}", async (
+        group.MapGet("/users/{userId:guid}", async (
             Guid userId,
-            UserManager<ApplicationUser> userManager,
-            HttpContext ctx) =>
+            UserManager<ApplicationUser> userManager) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var user = await userManager.FindByIdAsync(userId.ToString());
             if (user is null) return Results.NotFound();
 
@@ -46,13 +40,10 @@ public static class InternalEndpoints
         });
 
         // GET /api/v1/auth/internal/departments/{departmentId}/students
-        app.MapGet("/api/v1/auth/internal/departments/{departmentId:guid}/students", async (
+        group.MapGet("/departments/{departmentId:guid}/students", async (
             Guid departmentId,
-            UserManager<ApplicationUser> userManager,
-            HttpContext ctx) =>
+            UserManager<ApplicationUser> userManager) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var students = await userManager.GetUsersInRoleAsync("Student");
             var result = students
                 .Where(u => u.DepartmentId == departmentId)

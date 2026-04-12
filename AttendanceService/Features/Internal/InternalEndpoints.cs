@@ -4,28 +4,26 @@ namespace AttendanceService.Features.Internal;
 
 public static class InternalEndpoints
 {
-    private static bool IsInternalRequest(HttpContext ctx) =>
-        ctx.Request.Headers["X-Internal-Request"] == "true";
-
     public static void MapInternalEndpoints(this IEndpointRouteBuilder app)
     {
-        // GET /api/v1/attendance/internal/students/{studentId}
-        app.MapGet("/api/v1/attendance/internal/students/{studentId:guid}", async (
-            Guid studentId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
-        {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
+        var group = app.MapGroup("/api/v1/attendance/internal")
+                       .RequireAuthorization()
+                       .WithTags("Internal \u2013 Attendance");
 
+        // GET /api/v1/attendance/internal/students/{studentId}
+        group.MapGet("/students/{studentId:guid}", async (
+            Guid studentId,
+            IUnitOfWork uow) =>
+        {
             var records = await uow.AttendanceRecords.GetAllAsync(r => r.StudentId == studentId);
 
             var result = records
                 .GroupBy(r => r.CourseId)
                 .Select(g =>
                 {
-                    var totalLectures  = g.Select(r => r.LectureId).Distinct().Count();
-                    var attendedCount  = g.Count(r => r.IsAttended);
-                    var percentage     = totalLectures > 0
+                    var totalLectures = g.Select(r => r.LectureId).Distinct().Count();
+                    var attendedCount = g.Count(r => r.IsAttended);
+                    var percentage    = totalLectures > 0
                         ? Math.Round((double)attendedCount / totalLectures * 100, 2)
                         : 0.0;
 
@@ -43,13 +41,10 @@ public static class InternalEndpoints
         });
 
         // GET /api/v1/attendance/internal/students/{studentId}/overall
-        app.MapGet("/api/v1/attendance/internal/students/{studentId:guid}/overall", async (
+        group.MapGet("/students/{studentId:guid}/overall", async (
             Guid studentId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
+            IUnitOfWork uow) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var records = await uow.AttendanceRecords.GetAllAsync(r => r.StudentId == studentId);
 
             if (!records.Any()) return Results.Ok(0.0);
@@ -68,13 +63,10 @@ public static class InternalEndpoints
         });
 
         // GET /api/v1/attendance/internal/courses/{courseId}
-        app.MapGet("/api/v1/attendance/internal/courses/{courseId:guid}", async (
+        group.MapGet("/courses/{courseId:guid}", async (
             Guid courseId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
+            IUnitOfWork uow) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var records = await uow.AttendanceRecords.GetAllAsync(r => r.CourseId == courseId);
 
             var result = records
@@ -101,18 +93,14 @@ public static class InternalEndpoints
         });
 
         // GET /api/v1/attendance/internal/courses/{courseId}/average
-        app.MapGet("/api/v1/attendance/internal/courses/{courseId:guid}/average", async (
+        group.MapGet("/courses/{courseId:guid}/average", async (
             Guid courseId,
-            IUnitOfWork uow,
-            HttpContext ctx) =>
+            IUnitOfWork uow) =>
         {
-            if (!IsInternalRequest(ctx)) return Results.Forbid();
-
             var records = await uow.AttendanceRecords.GetAllAsync(r => r.CourseId == courseId);
 
             if (!records.Any()) return Results.Ok(0.0);
 
-            // Average attendance % across all students in this course
             var averagePercentage = records
                 .GroupBy(r => r.StudentId)
                 .Select(g =>
