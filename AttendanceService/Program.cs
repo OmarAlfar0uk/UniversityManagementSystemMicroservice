@@ -1,6 +1,7 @@
-﻿using AttendanceService.Contracts;
+using AttendanceService.Contracts;
 using AttendanceService.Data;
 using AttendanceService.Features.Attendance;
+using AttendanceService.Features.Internal;
 using AttendanceService.Middlewares;
 using AttendanceService.Repositories;
 using AttendanceService.Services;
@@ -121,6 +122,7 @@ namespace AttendanceService
             app.MapControllers();
 
             app.MapAttendanceEndpoints();
+            app.MapInternalEndpoints();
 
             app.Run();
         }

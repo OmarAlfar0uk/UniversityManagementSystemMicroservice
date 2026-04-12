@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Auth.Models;
 using AuthService.Data;
+using AuthService.Models;
 using FluentAssertions;
 using Learnify.Tests.Shared;
 using Microsoft.AspNetCore.Hosting;

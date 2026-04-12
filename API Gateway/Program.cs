@@ -1,16 +1,15 @@
-using System.Security.Claims;
 using System.Text;
 using API_Gateway.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Threading.RateLimiting;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 6. Serilog Configuration
+// ── 1. Serilog ────────────────────────────────────────────────
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -18,23 +17,23 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-// 1. Load YARP config
+// ── 2. YARP ───────────────────────────────────────────────────
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-// 2. JWT Authentication
+// ── 3. JWT Authentication ─────────────────────────────────────
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var issuer = jwtSettings["Issuer"];
-            var audience = jwtSettings["Audience"];
-            var secretKey = jwtSettings["SecretKey"];
+var issuer = jwtSettings["Issuer"];
+var audience = jwtSettings["Audience"];
+var secretKey = jwtSettings["SecretKey"];
 
-            if (string.IsNullOrWhiteSpace(issuer) ||
-                string.IsNullOrWhiteSpace(audience) ||
-                string.IsNullOrWhiteSpace(secretKey))
-            {
-                throw new InvalidOperationException(
-                    "JwtSettings are missing. Please set JwtSettings:Issuer, JwtSettings:Audience, and JwtSettings:SecretKey.");
-            }
+if (string.IsNullOrWhiteSpace(issuer) ||
+    string.IsNullOrWhiteSpace(audience) ||
+    string.IsNullOrWhiteSpace(secretKey))
+{
+    throw new InvalidOperationException(
+        "JwtSettings are missing. Please set Issuer, Audience, and SecretKey.");
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -47,11 +46,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = issuer,
             ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+            IssuerSigningKey = new SymmetricSecurityKey(
+                                           Encoding.UTF8.GetBytes(secretKey))
         };
     });
 
-// 3. Authorization
+// ── 4. Authorization ──────────────────────────────────────────
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Authenticated", policy => policy.RequireAuthenticatedUser());
@@ -59,18 +59,16 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SuperAdmin"));
 });
 
-// 4. CORS
+// ── 5. CORS ───────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
-    {
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
+              .AllowAnyHeader());
 });
 
-// 5. Rate Limiting
+// ── 6. Rate Limiting ──────────────────────────────────────────
 builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("fixed", opt =>
@@ -84,55 +82,91 @@ builder.Services.AddRateLimiter(options =>
     options.OnRejected = async (context, token) =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-        await context.HttpContext.Response.WriteAsJsonAsync(new { message = "Too many requests. Please try again later." }, token);
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Too many requests. Please try again later." }, token);
     };
 });
 
-// 7. HttpContextAccessor
+// ── 7. HttpContextAccessor ────────────────────────────────────
 builder.Services.AddHttpContextAccessor();
 
-// 10. Swagger Configuration for Aggregation
+// ── 8. Swagger ────────────────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Learnify API Gateway", Version = "v1" });
-});
-
-var app = builder.Build();
-
-// Pipeline Order
-
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Gateway");
-        c.SwaggerEndpoint("http://localhost:5000/swagger/v1/swagger.json", "Auth Service");
-        c.SwaggerEndpoint("http://localhost:5005/swagger/v1/swagger.json", "Academic Service");
-        c.SwaggerEndpoint("http://localhost:5003/swagger/v1/swagger.json", "Attendance Service");
-        c.SwaggerEndpoint("http://localhost:5004/swagger/v1/swagger.json", "Exam Service");
-        c.SwaggerEndpoint("http://localhost:5005/swagger/v1/swagger.json", "Grade Service");
-        c.SwaggerEndpoint("http://localhost:5006/swagger/v1/swagger.json", "Notification Service");
-        c.SwaggerEndpoint("http://localhost:5007/swagger/v1/swagger.json", "Message Service");
-        c.SwaggerEndpoint("http://localhost:5008/swagger/v1/swagger.json", "Progress Service");
+        Title = "Learnify API Gateway",
+        Version = "v1"
     });
 
+    // JWT Bearer button in Swagger UI
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter: Bearer {your token}"
+    });
 
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id   = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// ─────────────────────────────────────────────────────────────
+var app = builder.Build();
+// ─────────────────────────────────────────────────────────────
+
+// ── Swagger UI ────────────────────────────────────────────────
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    // Gateway's own /health endpoint
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Gateway");
+
+    // All microservices — routed via YARP swagger routes
+    c.SwaggerEndpoint("/swagger/auth/swagger.json", "Auth Service");
+    c.SwaggerEndpoint("/swagger/academic/swagger.json", "Academic Service");
+    c.SwaggerEndpoint("/swagger/attendance/swagger.json", "Attendance Service");
+    c.SwaggerEndpoint("/swagger/exam/swagger.json", "Exam Service");
+    c.SwaggerEndpoint("/swagger/grade/swagger.json", "Grade Service");
+    c.SwaggerEndpoint("/swagger/notification/swagger.json", "Notification Service");
+    c.SwaggerEndpoint("/swagger/message/swagger.json", "Message Service");
+    c.SwaggerEndpoint("/swagger/progress/swagger.json", "Progress Service");
+    c.SwaggerEndpoint("/swagger/reporting/swagger.json", "Reporting Service");
+
+    c.RoutePrefix = "swagger";
+});
+
+// ── Middleware Pipeline ───────────────────────────────────────
 app.UseSerilogRequestLogging();
 app.UseCors("AllowAll");
-
-// 8. Correlation ID Middleware
 app.UseMiddleware<CorrelationIdMiddleware>();
-
 app.UseRateLimiter();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 5. Health Check Endpoint
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "API Gateway" }));
+// ── Endpoints ─────────────────────────────────────────────────
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "healthy",
+    service = "API Gateway"
+}));
 
-// 9. Map YARP
 app.MapReverseProxy();
 
 app.Run();
-

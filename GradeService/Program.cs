@@ -1,6 +1,7 @@
-﻿using GradeService.Contracts;
+using GradeService.Contracts;
 using GradeService.Data;
 using GradeService.Features.Grades;
+using GradeService.Features.Internal;
 using GradeService.Middlewares;
 using GradeService.Repositories;
 using GradeService.Services;
@@ -148,6 +149,7 @@ namespace GradeService
             app.MapControllers();
 
             app.MapGradeEndpoints();
+            app.MapInternalEndpoints();
 
             app.Run();
         }

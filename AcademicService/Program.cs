@@ -7,6 +7,7 @@ using AcademicService.Features.Departments;
 using AcademicService.Features.LectureMaterials;
 using AcademicService.Features.Lectures;
 using AcademicService.Features.Schedule;
+using AcademicService.Features.Internal;
 using AcademicService.Middlewares;
 using AcademicService.Repositories;
 using AcademicService.Services;
@@ -195,6 +196,7 @@ namespace AcademicService
             app.MapLectureMaterialEndpoints();
             app.MapAssignmentEndpoints();
             app.MapScheduleEndpoints();
+            app.MapInternalEndpoints();
 
             await app.RunAsync();
         }

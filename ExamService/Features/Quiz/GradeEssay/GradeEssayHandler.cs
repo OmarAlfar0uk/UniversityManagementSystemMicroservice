@@ -1,4 +1,5 @@
 using ExamService.Contracts;
+using MassTransit;
 using MediatR;
 
 namespace ExamService.Features.Quiz.GradeEssay;
@@ -53,7 +54,7 @@ public class GradeEssayHandler : IRequestHandler<GradeEssayCommand>
                 attempt.QuizId,
                 attempt.Score,
                 IsPassed = attempt.Score >= 50, // Assuming 50 is passing
-                CompletedAt = attempt.UpdatedAt ?? DateTime.UtcNow
+                CompletedAt = attempt.UpdatedAt
             });
         }
     }

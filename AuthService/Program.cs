@@ -7,6 +7,7 @@ using Auth.Services;
 using AuthService.Contracts;
 using AuthService.Data;
 using AuthService.Features.Auth;
+using AuthService.Features.Internal;
 using AuthService.Features.Auth.Admin;
 using AuthService.Features.Auth.Parent;
 using AuthService.Features.Auth.Student;
@@ -268,6 +269,7 @@ namespace Auth_Service
             app.MapAdminAuthEndpoints();
             app.MapParentAuthEndpoints();
             app.MapStudentAuthEndpoints();
+            app.MapInternalEndpoints();
             #endregion
 
 

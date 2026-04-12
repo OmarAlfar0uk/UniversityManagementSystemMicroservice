@@ -1,6 +1,7 @@
-﻿using ExamService.Contracts;
+using ExamService.Contracts;
 using ExamService.Data;
 using ExamService.Features.Quiz;
+using ExamService.Features.Internal;
 using ExamService.Middlewares;
 using ExamService.Repositories;
 using ExamService.Services;
@@ -135,6 +136,7 @@ namespace ExamService
             app.MapControllers();
 
             app.MapQuizEndpoints();
+            app.MapInternalEndpoints();
 
             app.Run();
         }
