@@ -127,18 +127,14 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// ─────────────────────────────────────────────────────────────
 var app = builder.Build();
-// ─────────────────────────────────────────────────────────────
 
-// ── Swagger UI ────────────────────────────────────────────────
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    // Gateway's own /health endpoint
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Gateway");
 
-    // All microservices — routed via YARP swagger routes
     c.SwaggerEndpoint("/swagger/auth/swagger.json", "Auth Service");
     c.SwaggerEndpoint("/swagger/academic/swagger.json", "Academic Service");
     c.SwaggerEndpoint("/swagger/attendance/swagger.json", "Attendance Service");
@@ -152,7 +148,6 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-// ── Middleware Pipeline ───────────────────────────────────────
 app.UseSerilogRequestLogging();
 app.UseCors("AllowAll");
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -160,7 +155,6 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ── Endpoints ─────────────────────────────────────────────────
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "healthy",
