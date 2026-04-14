@@ -14,7 +14,6 @@ namespace AuthService.Seeding
             const string email = "superadmin@university.com";   
             const string password = "SuperAdmin@123";
 
-            // 1️⃣ Ensure role exists
             if (!await roleManager.RoleExistsAsync(roleName))
             {
                 await roleManager.CreateAsync(new ApplicationRole
@@ -24,12 +23,10 @@ namespace AuthService.Seeding
                 });
             }
 
-            // 2️⃣ Check if user exists
             var existingUser = await userManager.FindByEmailAsync(email);
             if (existingUser != null)
                 return;
 
-            // 3️⃣ Create SuperAdmin
             var user = new ApplicationUser
             {
                 UserName = email,
@@ -50,7 +47,6 @@ namespace AuthService.Seeding
                 );
             }
 
-            // 4️⃣ Assign role
             await userManager.AddToRoleAsync(user, roleName);
         }
     }
