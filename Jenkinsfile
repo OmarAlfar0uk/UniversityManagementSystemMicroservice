@@ -2,22 +2,25 @@ pipeline {
     agent any
 
     stages {
-        stage('Clone') {
-            steps {
-                git 'https://github.com/OmarAlfar0uk/UniversityManagementSystemMicroservice.git'
-            }
-        }
-
         stage('Build') {
             steps {
                 sh 'docker compose build'
             }
         }
 
-        stage('Run') {
+        stage('Deploy') {
             steps {
                 sh 'docker compose up -d'
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build and deployment completed successfully'
+        }
+        failure {
+            echo 'Pipeline failed'
         }
     }
 }
