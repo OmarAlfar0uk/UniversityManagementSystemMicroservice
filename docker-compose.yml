@@ -79,6 +79,7 @@ services:
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASS}
+      ServiceUrls__Academic: http://academicservice:80
       SEQ_URL: http://seq:5341
     volumes:
       - ./AuthService/wwwroot:/app/wwwroot
@@ -107,6 +108,7 @@ services:
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASS}
+      ServiceEndpoints__AuthServiceBaseUrl: http://authservice:80
       SEQ_URL: http://seq:5341
     volumes:
       - ./AcademicService/wwwroot:/app/wwwroot

@@ -24,7 +24,11 @@ public class AuthStudentDirectoryClient : IStudentDirectoryClient
         Guid departmentId,
         CancellationToken cancellationToken)
     {
-        var baseUrl = _configuration["ServiceEndpoints:AuthServiceBaseUrl"] ?? "http://localhost:5000";
+        var baseUrl =
+            _configuration["ServiceEndpoints:AuthServiceBaseUrl"] ??
+            _configuration["ServiceUrls:Auth"] ??
+            _configuration["Services:Auth"] ??
+            "http://localhost:5001";
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
             $"{baseUrl.TrimEnd('/')}/api/v1/auth/admin/departments/{departmentId}/students");
@@ -42,6 +46,27 @@ public class AuthStudentDirectoryClient : IStudentDirectoryClient
             cancellationToken: cancellationToken);
 
         return payload?.Data?.Select(student => student.StudentId).ToList() ?? [];
+    }
+
+    public async Task<bool> StudentExistsAsync(Guid studentId, CancellationToken cancellationToken)
+    {
+        var baseUrl =
+            _configuration["ServiceEndpoints:AuthServiceBaseUrl"] ??
+            _configuration["ServiceUrls:Auth"] ??
+            _configuration["Services:Auth"] ??
+            "http://localhost:5001";
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"{baseUrl.TrimEnd('/')}/api/v1/auth/internal/users/{studentId}");
+
+        var authorization = _httpContextAccessor.HttpContext?.Request.Headers.Authorization.ToString();
+        if (!string.IsNullOrWhiteSpace(authorization))
+        {
+            request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);
+        }
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return response.IsSuccessStatusCode;
     }
 
     private sealed record AuthEndpointResponse<T>(

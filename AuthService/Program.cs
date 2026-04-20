@@ -169,6 +169,16 @@ namespace Auth_Service
             builder.Services.AddScoped<ITokenService, JwtService>();
             builder.Services.AddScoped<IMailKitEmailService, MailKitEmailService>();
             builder.Services.AddHttpContextAccessor();
+            var academicServiceUrl =
+                builder.Configuration["ServiceUrls:Academic"] ??
+                builder.Configuration["Services:Academic"] ??
+                "http://localhost:5002";
+            builder.Services.AddHttpClient("AcademicService", client =>
+            {
+                client.BaseAddress = new Uri(academicServiceUrl);
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
+            builder.Services.AddScoped<IAcademicServiceClient, AcademicServiceClient>();
             builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
             builder.Services.AddTransient(
             typeof(IPipelineBehavior<,>),

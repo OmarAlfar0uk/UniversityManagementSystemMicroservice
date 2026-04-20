@@ -91,6 +91,66 @@ public static class InternalEndpoints
             return Results.Ok(result);
         });
 
+        // DELETE /api/v1/academic/internal/students/{studentId}/enrollments
+        group.MapDelete("/students/{studentId:guid}/enrollments", async (
+            Guid studentId,
+            IUnitOfWork uow) =>
+        {
+            var enrollments = (await uow.CourseEnrollments
+                .GetAllAsync(e => e.StudentId == studentId))
+                .ToList();
+
+            if (enrollments.Count > 0)
+            {
+                uow.CourseEnrollments.RemoveRange(enrollments);
+                await uow.SaveChangesAsync();
+            }
+
+            return Results.Ok(new
+            {
+                studentId,
+                deletedCount = enrollments.Count
+            });
+        }).RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"));
+
+        // POST /api/v1/academic/internal/enrollments/cleanup-orphans
+        group.MapPost("/enrollments/cleanup-orphans", async (
+            IUnitOfWork uow,
+            IStudentDirectoryClient studentDirectoryClient,
+            CancellationToken cancellationToken) =>
+        {
+            var enrollments = (await uow.CourseEnrollments.GetAllAsync()).ToList();
+            var studentIds = enrollments
+                .Select(enrollment => enrollment.StudentId)
+                .Distinct()
+                .ToList();
+
+            var existingStudentIds = new HashSet<Guid>();
+            foreach (var studentId in studentIds)
+            {
+                if (await studentDirectoryClient.StudentExistsAsync(studentId, cancellationToken))
+                {
+                    existingStudentIds.Add(studentId);
+                }
+            }
+
+            var orphanEnrollments = enrollments
+                .Where(enrollment => !existingStudentIds.Contains(enrollment.StudentId))
+                .ToList();
+
+            if (orphanEnrollments.Count > 0)
+            {
+                uow.CourseEnrollments.RemoveRange(orphanEnrollments);
+                await uow.SaveChangesAsync();
+            }
+
+            return Results.Ok(new
+            {
+                checkedStudentCount = studentIds.Count,
+                deletedCount = orphanEnrollments.Count
+            });
+        }).RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"));
+
         // GET /api/v1/academic/internal/doctors/{doctorId}/courses
         group.MapGet("/doctors/{doctorId:guid}/courses", async (
             Guid doctorId,
