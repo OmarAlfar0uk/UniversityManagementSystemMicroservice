@@ -160,6 +160,7 @@ namespace AcademicService
                 {
                     var dbContext = services.GetRequiredService<AcademicDbContext>();
                     await dbContext.Database.MigrateAsync();
+                    await EnsureScheduleDepartmentSchemaAsync(dbContext);
 
                     Console.WriteLine("ðŸ“Š [AcademicService] Starting database seeding...");
                     await AcademicService.Seeding.DataSeeder.SeedAsync(services);
@@ -202,6 +203,31 @@ namespace AcademicService
             app.MapInternalEndpoints();
 
             await app.RunAsync();
+        }
+
+        private static async Task EnsureScheduleDepartmentSchemaAsync(AcademicDbContext dbContext)
+        {
+            const string sql = """
+                IF COL_LENGTH('dbo.Schedules', 'DepartmentId') IS NULL
+                BEGIN
+                    ALTER TABLE dbo.Schedules
+                    ADD DepartmentId uniqueidentifier NOT NULL
+                    CONSTRAINT DF_Schedules_DepartmentId DEFAULT ('00000000-0000-0000-0000-000000000000');
+                END;
+
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM sys.indexes
+                    WHERE name = 'IX_Schedules_DepartmentId_Type'
+                      AND object_id = OBJECT_ID('dbo.Schedules')
+                )
+                BEGIN
+                    CREATE INDEX IX_Schedules_DepartmentId_Type
+                    ON dbo.Schedules (DepartmentId, [Type]);
+                END;
+                """;
+
+            await dbContext.Database.ExecuteSqlRawAsync(sql);
         }
     }
 }
