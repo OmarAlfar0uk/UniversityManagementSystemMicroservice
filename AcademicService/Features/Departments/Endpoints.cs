@@ -1,3 +1,4 @@
+using AcademicService.Features.Departments.GetDepartmentDetails;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +24,14 @@ public static class Endpoints
             return Results.Ok(result);
         }).WithSummary("List departments");
 
+        admin.MapGet("/{departmentId:guid}", async (
+            Guid departmentId,
+            ISender sender) =>
+        {
+            var result = await sender.Send(new GetDepartmentDetailsQuery(departmentId));
+            return Results.Ok(result);
+        }).WithSummary("Get department details with courses and student counts (Admin)");
+
         admin.MapPost("/{departmentId:guid}/enrollments/sync", async (Guid departmentId, ISender sender) =>
         {
             var result = await sender.Send(new SyncDepartmentEnrollmentsCommand(departmentId));
@@ -32,3 +41,4 @@ public static class Endpoints
 }
 
 public record CreateDepartmentRequest(string Name, string Code);
+

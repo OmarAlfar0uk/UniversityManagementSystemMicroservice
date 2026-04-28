@@ -18,6 +18,8 @@ namespace AuthService.Features.Auth.Activate
         private readonly IMemoryCache _cache;
         private readonly ITokenService _tokenService;
 
+        
+        
         public ActivateHandler(
             UniversitySystemAuthContext context,
             UserManager<ApplicationUser> userManager,

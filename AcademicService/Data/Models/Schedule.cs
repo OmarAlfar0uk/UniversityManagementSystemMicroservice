@@ -8,6 +8,7 @@ public class Schedule
     public string ImageUrl { get; set; } = default!;
     public ScheduleType Type { get; set; }
     public string? AcademicYear { get; set; }
+    public Guid DepartmentId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

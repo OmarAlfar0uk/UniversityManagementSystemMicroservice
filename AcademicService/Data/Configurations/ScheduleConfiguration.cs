@@ -30,5 +30,8 @@ public class ScheduleConfiguration : IEntityTypeConfiguration<Schedule>
 
         builder.Property(s => s.UpdatedAt)
             .HasDefaultValueSql("GETUTCDATE()");
+
+        builder.Property(s => s.DepartmentId).IsRequired();
+        builder.HasIndex(s => new { s.DepartmentId, s.Type });
     }
 }

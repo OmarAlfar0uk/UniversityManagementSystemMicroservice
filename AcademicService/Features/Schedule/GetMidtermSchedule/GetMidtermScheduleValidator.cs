@@ -4,5 +4,8 @@ namespace AcademicService.Features.Schedule.GetMidtermSchedule;
 
 public class GetMidtermScheduleValidator : AbstractValidator<GetMidtermScheduleQuery>
 {
-    public GetMidtermScheduleValidator() { }
+    public GetMidtermScheduleValidator()
+    {
+        RuleFor(x => x.DepartmentId).NotEmpty();
+    }
 }
