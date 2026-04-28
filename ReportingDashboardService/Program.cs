@@ -84,33 +84,48 @@ builder.Services.AddHttpContextAccessor();
 // ─────────────────────────────────────────────────────────────────────────────
 // Named HTTP Clients
 // ─────────────────────────────────────────────────────────────────────────────
+string ResolveServiceUrl(string serviceName)
+{
+    var url =
+        builder.Configuration[$"ServiceUrls:{serviceName}"] ??
+        builder.Configuration[$"Services:{serviceName}"];
+
+    if (string.IsNullOrWhiteSpace(url))
+    {
+        throw new InvalidOperationException(
+            $"Missing URL for service '{serviceName}'. Expected configuration key 'ServiceUrls:{serviceName}' or 'Services:{serviceName}'.");
+    }
+
+    return url;
+}
+
 builder.Services.AddHttpClient("AuthService", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Auth"]!);
+    client.BaseAddress = new Uri(ResolveServiceUrl("Auth"));
     client.Timeout     = TimeSpan.FromSeconds(10);
 });
 
 builder.Services.AddHttpClient("AcademicService", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Academic"]!);
+    client.BaseAddress = new Uri(ResolveServiceUrl("Academic"));
     client.Timeout     = TimeSpan.FromSeconds(10);
 });
 
 builder.Services.AddHttpClient("AttendanceService", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Attendance"]!);
+    client.BaseAddress = new Uri(ResolveServiceUrl("Attendance"));
     client.Timeout     = TimeSpan.FromSeconds(10);
 });
 
 builder.Services.AddHttpClient("ExamService", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Exam"]!);
+    client.BaseAddress = new Uri(ResolveServiceUrl("Exam"));
     client.Timeout     = TimeSpan.FromSeconds(10);
 });
 
 builder.Services.AddHttpClient("GradeService", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:Grade"]!);
+    client.BaseAddress = new Uri(ResolveServiceUrl("Grade"));
     client.Timeout     = TimeSpan.FromSeconds(10);
 });
 
