@@ -307,6 +307,11 @@ services:
       RabbitMQ__Password: ${RABBITMQ_PASS}
       SEQ_URL: http://seq:5341
       # Internal service URLs for HTTP aggregation
+      ServiceUrls__Auth: http://authservice:80
+      ServiceUrls__Academic: http://academicservice:80
+      ServiceUrls__Attendance: http://attendanceservice:80
+      ServiceUrls__Exam: http://examservice:80
+      ServiceUrls__Grade: http://gradeservice:80
       Services__Auth: http://authservice:80
       Services__Academic: http://academicservice:80
       Services__Attendance: http://attendanceservice:80
