@@ -6,6 +6,7 @@ using AcademicService.Features.Courses.GetAllCourses;
 using AcademicService.Features.Courses.GetCourseById;
 using AcademicService.Features.Courses.GetCourseInstructor;
 using AcademicService.Features.Courses.UpdateCourse;
+using AcademicService.Features.Courses.GetAllCoursesAdmin;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -54,14 +55,22 @@ public static class Endpoints
                        .RequireAuthorization(p => p.RequireRole("Admin","SuperAdmin", "Doctor"))
                        .WithTags("Academic – Courses (Admin)");
 
+        admin.MapGet("/", async (ISender sender) =>
+        {
+            var result = await sender.Send(new GetAllCoursesAdminQuery());
+            return Results.Ok(result);
+        })
+        .WithSummary("Get all courses with enrollment count (Admin)");
+
         admin.MapPost("/", async (
             [FromForm] string name,
             [FromForm] string? description,
             IFormFile? coverImage,
             [FromForm] Guid doctorId,
+            [FromForm] Guid? departmentId,
             ISender sender) =>
         {
-            var command = new CreateCourseCommand(name, description, coverImage, doctorId);
+            var command = new CreateCourseCommand(name, description, coverImage, doctorId, departmentId);
             var result = await sender.Send(command);
             return Results.Created($"/api/v1/academic/courses/{result.Id}", result);
         })

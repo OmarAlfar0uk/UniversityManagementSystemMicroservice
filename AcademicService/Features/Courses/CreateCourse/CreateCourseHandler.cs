@@ -31,6 +31,7 @@ public class CreateCourseHandler : IRequestHandler<CreateCourseCommand, CourseRe
             Description = request.Description,
             CoverImageUrl = coverImageUrl,
             DoctorId = request.DoctorId,
+            DepartmentId = request.DepartmentId,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
