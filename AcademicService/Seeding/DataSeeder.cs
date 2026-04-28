@@ -12,13 +12,23 @@ public static class DataSeeder
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AcademicDbContext>();
 
-        await context.Database.EnsureCreatedAsync(); // Ensure DB is created (in case migrations are not run)
-
         if (!await context.Courses.AnyAsync())
         {
             var doctorId = Guid.NewGuid(); // Fake doctor ID
             var studentId1 = Guid.NewGuid(); // Fake student IDs
             var studentId2 = Guid.NewGuid();
+            var departmentId = Guid.NewGuid();
+
+            var department = new Department
+            {
+                Id = departmentId,
+                Name = "Computer Science",
+                Code = "CS",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await context.Departments.AddAsync(department);
 
             // 1. Courses
             var course1 = new Course
@@ -28,6 +38,7 @@ public static class DataSeeder
                 Description = "A foundational course in CS.",
                 CoverImageUrl = "https://example.com/cs101.jpg",
                 DoctorId = doctorId,
+                DepartmentId = departmentId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -40,6 +51,7 @@ public static class DataSeeder
                 Description = "Calculus, Linear Algebra, and more.",
                 CoverImageUrl = "https://example.com/math201.jpg",
                 DoctorId = doctorId,
+                DepartmentId = departmentId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -154,6 +166,7 @@ public static class DataSeeder
                 ImageUrl = "https://example.com/schedule1.jpg",
                 Type = ScheduleType.ClassSchedule,
                 AcademicYear = "2026-2027",
+                DepartmentId = departmentId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

@@ -390,6 +390,9 @@ namespace AcademicService.Data.Migaratoins
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -397,7 +400,7 @@ namespace AcademicService.Data.Migaratoins
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -405,6 +408,8 @@ namespace AcademicService.Data.Migaratoins
                         .HasDefaultValueSql("GETUTCDATE()");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId", "Type");
 
                     b.ToTable("Schedules", (string)null);
                 });

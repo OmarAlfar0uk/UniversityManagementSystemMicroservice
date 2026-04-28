@@ -158,6 +158,9 @@ namespace AcademicService
                 var services = scope.ServiceProvider;
                 try
                 {
+                    var dbContext = services.GetRequiredService<AcademicDbContext>();
+                    await dbContext.Database.MigrateAsync();
+
                     Console.WriteLine("ðŸ“Š [AcademicService] Starting database seeding...");
                     await AcademicService.Seeding.DataSeeder.SeedAsync(services);
                     Console.WriteLine("âœ… [AcademicService] Database seeding completed.");
