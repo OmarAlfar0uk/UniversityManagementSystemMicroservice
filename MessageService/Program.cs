@@ -84,6 +84,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendCors", policy =>
+    {
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+        if (origins is { Length: > 0 })
+        {
+            policy.WithOrigins(origins)
+                .AllowAnyMethod()
+                .AllowCredentials()
+                .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-Correlation-Id");
+            return;
+        }
+
+        policy.SetIsOriginAllowed(_ => true)
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
 // MediatR DI
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 
@@ -108,6 +129,7 @@ app.UseMiddleware<MessageService.Middlewares.GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 
+app.UseCors("FrontendCors");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -139,6 +161,5 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
-
 
 

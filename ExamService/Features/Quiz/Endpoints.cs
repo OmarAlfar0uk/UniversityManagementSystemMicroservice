@@ -10,6 +10,7 @@ using ExamService.Features.Quiz.GradeEssay;
 using ExamService.Features.Quiz.SubmitQuiz;
 using ExamService.Features.Quiz.UpdateQuestion;
 using ExamService.Features.Quiz.UpdateQuizSettings;
+using ExamService.Features.Quiz.AddBulkQuestions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -88,6 +89,23 @@ public static class Endpoints
                 lectureId, body.Text, body.Type, body.Points, body.OrderIndex, body.CorrectAnswer, body.Options));
             return Results.Created($"/api/v1/exam/admin/questions/{result.Id}", result);
         }).WithSummary("Add question to quiz (Admin/Doctor)");
+
+        doctor.MapPost("/quizzes/{quizId:guid}/questions/bulk", async (
+            Guid quizId,
+            [FromBody] List<AddQuestionBody> body,
+            ISender sender) =>
+        {
+            var questions = body.Select(q => new BulkQuestionRequest(
+                q.Text,
+                q.Type,
+                q.Points,
+                q.OrderIndex,
+                q.CorrectAnswer,
+                q.Options)).ToList();
+
+            var result = await sender.Send(new AddBulkQuestionsCommand(quizId, questions));
+            return Results.Created($"/api/v1/exam/admin/quizzes/{quizId}/questions/bulk", result);
+        }).WithSummary("Bulk add questions to quiz by quizId (Admin/Doctor)");
 
         doctor.MapPut("/questions/{questionId:guid}", async (
             Guid questionId,

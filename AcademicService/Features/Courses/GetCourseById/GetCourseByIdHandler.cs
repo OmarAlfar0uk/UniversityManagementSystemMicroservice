@@ -6,10 +6,12 @@ namespace AcademicService.Features.Courses.GetCourseById;
 public class GetCourseByIdHandler : IRequestHandler<GetCourseByIdQuery, CourseDetailsResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IImageHelper _imageHelper;
 
-    public GetCourseByIdHandler(IUnitOfWork unitOfWork)
+    public GetCourseByIdHandler(IUnitOfWork unitOfWork, IImageHelper imageHelper)
     {
         _unitOfWork = unitOfWork;
+        _imageHelper = imageHelper;
     }
 
     public async Task<CourseDetailsResponse> Handle(
@@ -27,7 +29,7 @@ public class GetCourseByIdHandler : IRequestHandler<GetCourseByIdQuery, CourseDe
             course.Id,
             course.Name,
             course.Description ?? string.Empty,
-            course.CoverImageUrl ?? string.Empty,
+            _imageHelper.GetImageUrl(course.CoverImageUrl ?? string.Empty) ?? string.Empty,
             course.DoctorId,
             lectures.Count(),
             0m,

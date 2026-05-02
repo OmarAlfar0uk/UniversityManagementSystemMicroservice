@@ -66,6 +66,15 @@ namespace GradeService
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IGradeAuditLogger, GradeAuditLogger>();
+            var authServiceUrl =
+                builder.Configuration["ServiceUrls:Auth"] ??
+                builder.Configuration["Services:Auth"] ??
+                "http://localhost:5001";
+            builder.Services.AddHttpClient("AuthService", client =>
+            {
+                client.BaseAddress = new Uri(authServiceUrl);
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
 
             #region MediatR & Validation
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));

@@ -6,10 +6,12 @@ namespace AcademicService.Features.Courses.GetAllCourses;
 public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedResponse<CourseResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IImageHelper _imageHelper;
 
-    public GetAllCoursesHandler(IUnitOfWork unitOfWork)
+    public GetAllCoursesHandler(IUnitOfWork unitOfWork, IImageHelper imageHelper)
     {
         _unitOfWork = unitOfWork;
+        _imageHelper = imageHelper;
     }
 
     public async Task<PagedResponse<CourseResponse>> Handle(
@@ -35,7 +37,7 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
                 c.Id,
                 c.Name,
                 c.Description ?? string.Empty,
-                c.CoverImageUrl ?? string.Empty,
+                _imageHelper.GetImageUrl(c.CoverImageUrl ?? string.Empty) ?? string.Empty,
                 c.DoctorId,
                 0m,
                 c.DepartmentId,

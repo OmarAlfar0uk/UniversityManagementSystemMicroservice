@@ -25,7 +25,7 @@ namespace AcademicService
 {
     public class Program
     {
-        private const long MaxUploadSizeBytes = 1024L * 1024 * 1024; // 1 GB
+        private const long MaxUploadSizeBytes = 500L * 1024 * 1024; // 500 MB
 
         public static async Task Main(string[] args)
         {

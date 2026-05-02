@@ -6,6 +6,9 @@ using GradeService.Features.Grades.SetFinalGrade;
 using GradeService.Features.Grades.SetMidtermGrade;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using GradeService.Contracts;
+using System.Net.Http.Json;
+using System.Net.Http.Headers;
 
 namespace GradeService.Features.Grades;
 
@@ -59,7 +62,59 @@ public static class Endpoints
             var result = await sender.Send(new SetFinalGradeCommand(courseId, studentId, body.Score));
             return Results.Ok(result);
         }).WithSummary("Set final grade (Doctor)");
+
+        doctor.MapGet("/{courseId:guid}/students", async (
+            Guid courseId,
+            IUnitOfWork uow,
+            IHttpClientFactory httpClientFactory,
+            HttpContext httpContext) =>
+        {
+            var client = httpClientFactory.CreateClient("AuthService");
+            var incomingAuth = httpContext.Request.Headers.Authorization.ToString();
+            if (!string.IsNullOrWhiteSpace(incomingAuth))
+            {
+                client.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(incomingAuth);
+            }
+            var grades = (await uow.StudentGrades.GetAllAsync(g => g.CourseId == courseId)).ToList();
+
+            var students = new List<object>(grades.Count);
+            foreach (var grade in grades)
+            {
+                string name = string.Empty;
+                try
+                {
+                    var response = await client.GetAsync($"/api/v1/auth/internal/users/{grade.StudentId}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var userInfo = await response.Content.ReadFromJsonAsync<AuthUserResponse>();
+                        name = userInfo?.fullName ?? string.Empty;
+                    }
+                }
+                catch
+                {
+                    // If Auth service is unreachable, return grades with empty name.
+                }
+
+                students.Add(new
+                {
+                    id = grade.StudentId,
+                    name,
+                    grades = new
+                    {
+                        attendance = grade.AttendanceScore,
+                        assignment = grade.AssignmentScore,
+                        quiz = grade.QuizScore,
+                        midterm = grade.MidtermScore,
+                        final = grade.FinalScore,
+                        total = grade.TotalScore
+                    }
+                });
+            }
+
+            return Results.Ok(students);
+        }).WithSummary("Get students with current grades by course (Doctor)");
     }
 }
 
 public record GradeBody(decimal Score);
+file record AuthUserResponse(Guid id, string fullName);

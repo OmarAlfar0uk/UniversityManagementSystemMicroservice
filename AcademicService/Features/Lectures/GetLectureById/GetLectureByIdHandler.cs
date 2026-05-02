@@ -6,10 +6,12 @@ namespace AcademicService.Features.Lectures.GetLectureById;
 public class GetLectureByIdHandler : IRequestHandler<GetLectureByIdQuery, LectureDetailsResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IImageHelper _imageHelper;
 
-    public GetLectureByIdHandler(IUnitOfWork unitOfWork)
+    public GetLectureByIdHandler(IUnitOfWork unitOfWork, IImageHelper imageHelper)
     {
         _unitOfWork = unitOfWork;
+        _imageHelper = imageHelper;
     }
 
     public async Task<LectureDetailsResponse> Handle(
@@ -27,7 +29,7 @@ public class GetLectureByIdHandler : IRequestHandler<GetLectureByIdQuery, Lectur
         return new LectureDetailsResponse(
             lecture.Id,
             lecture.Title,
-            lecture.ThumbnailUrl ?? string.Empty,
+            _imageHelper.GetImageUrl(lecture.ThumbnailUrl ?? string.Empty) ?? string.Empty,
             hasPdf,
             hasVideo,
             hasAssignment

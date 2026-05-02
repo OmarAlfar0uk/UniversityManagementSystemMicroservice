@@ -10,7 +10,7 @@ namespace AcademicService.Services
                 ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".txt"
             };
 
-        private const long MaxFileSizeBytes = 50L * 1024 * 1024; // 50 MB
+        private const long MaxFileSizeBytes = 500L * 1024 * 1024; // 500 MB
 
         private readonly IWebHostEnvironment _env;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -66,7 +66,7 @@ namespace AcademicService.Services
                 throw new ArgumentException($"File format '{extension}' is not allowed. Allowed formats: {string.Join(", ", AllowedExtensions)}");
 
             if (file.Length > MaxFileSizeBytes)
-                throw new ArgumentException("File exceeds the maximum allowed size of 50MB.");
+                throw new ArgumentException("File exceeds the maximum allowed size of 500MB.");
 
             var fileName = $"{Guid.NewGuid()}{extension}";
             var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");

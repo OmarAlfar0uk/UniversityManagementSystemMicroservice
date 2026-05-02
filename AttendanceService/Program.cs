@@ -55,6 +55,29 @@ namespace AttendanceService
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAttendanceAuditLogger, AttendanceAuditLogger>();
 
+            #region CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("FrontendCors", policy =>
+                {
+                    var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+                    if (origins is { Length: > 0 })
+                    {
+                        policy.WithOrigins(origins)
+                            .AllowAnyMethod()
+                            .AllowCredentials()
+                            .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-Correlation-Id");
+                        return;
+                    }
+
+                    policy.SetIsOriginAllowed(_ => true)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
+            });
+            #endregion
+
             #region MediatR & Validation
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
             builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
@@ -116,7 +139,7 @@ namespace AttendanceService
             app.UseMiddleware<SerilogEnricherMiddleware>();
 
             app.UseHttpsRedirection();
-            app.UseCors("AllowAll");
+            app.UseCors("FrontendCors");
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
