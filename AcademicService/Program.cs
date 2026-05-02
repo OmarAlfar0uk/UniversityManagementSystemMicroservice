@@ -182,10 +182,10 @@ namespace AcademicService
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            app.UseCors("AllowAll");
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseMiddleware<CorrelationIdMiddleware>();
             app.UseMiddleware<SerilogEnricherMiddleware>();
+            app.UseStaticFiles();
 
            // app.UseHttpsRedirection();
             app.UseCors("AllowAll");
@@ -231,4 +231,3 @@ namespace AcademicService
         }
     }
 }
-

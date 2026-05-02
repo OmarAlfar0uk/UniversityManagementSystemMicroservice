@@ -268,6 +268,7 @@ namespace Auth_Service
             // 🛡️ Global exception handler — must be first to catch everything
             app.UseMiddleware<Auth.Middlewares.GlobalExceptionMiddleware>();
             app.UseMiddleware<AuthService.Middlewares.CorrelationIdMiddleware>();
+            app.UseStaticFiles();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseRateLimiter();
@@ -287,4 +288,3 @@ namespace Auth_Service
         }
     }
 }
-

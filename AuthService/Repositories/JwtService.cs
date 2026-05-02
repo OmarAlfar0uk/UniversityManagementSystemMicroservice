@@ -49,24 +49,25 @@ namespace Auth.Repositories
                 issuer: _config["JwtSettings:Issuer"],
                 audience: _config["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(30),
+                expires: DateTime.UtcNow.AddMinutes(GetAccessTokenExpiryMinutes()),
                 signingCredentials: creds
             );
             var accessTokenString = new JwtSecurityTokenHandler().WriteToken(accessToken);
 
             // Refresh Token
-            var refreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
-            var refreshTokenExpiry = rememberMe ? DateTime.UtcNow.AddDays(30) : DateTime.UtcNow.AddDays(7);
+            var refreshToken = GenerateSecureRefreshToken();
+            var refreshTokenExpiry = DateTime.UtcNow.AddDays(
+                rememberMe ? GetRememberMeRefreshExpiryDays() : GetDefaultRefreshExpiryDays());
 
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = refreshTokenExpiry;
-            await _userManager.UpdateAsync(user);
+            await EnsureUpdateSucceededAsync(user);
 
             return (accessTokenString, refreshToken);
         }
 
         // ========================= 🔁 Refresh Access Token =========================
-        public async Task<string?> RefreshAccessTokenAsync(string refreshToken)
+        public async Task<(string AccessToken, string RefreshToken)?> RefreshAccessTokenAsync(string refreshToken)
         {
             var user = await _userManager.Users
                 .AsNoTracking()
@@ -84,12 +85,18 @@ namespace Auth.Repositories
             var newAccessToken = GenerateAccessToken(trackedUser, roles);
 
             // Renew Refresh Token
-            trackedUser.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            var newRefreshToken = GenerateSecureRefreshToken();
+            trackedUser.RefreshToken = newRefreshToken;
 
-            trackedUser.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-            await _userManager.UpdateAsync(trackedUser);
+            var wasRememberMeSession =
+                trackedUser.RefreshTokenExpiryTime.HasValue &&
+                trackedUser.RefreshTokenExpiryTime.Value > DateTime.UtcNow.AddDays(GetDefaultRefreshExpiryDays());
+            trackedUser.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
+                wasRememberMeSession ? GetRememberMeRefreshExpiryDays() : GetDefaultRefreshExpiryDays());
 
-            return newAccessToken;
+            await EnsureUpdateSucceededAsync(trackedUser);
+
+            return (newAccessToken, newRefreshToken);
         }
 
         // ========================= 🔐 Access Token Generator =========================
@@ -119,7 +126,7 @@ namespace Auth.Repositories
                 issuer: _config["JwtSettings:Issuer"],
                 audience: _config["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(30),
+                expires: DateTime.UtcNow.AddMinutes(GetAccessTokenExpiryMinutes()),
                 signingCredentials: creds
             );
 
@@ -131,7 +138,39 @@ namespace Auth.Repositories
         {
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null;
-            await _userManager.UpdateAsync(user);
+            await EnsureUpdateSucceededAsync(user);
+        }
+
+        private static string GenerateSecureRefreshToken()
+        {
+            return Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(64));
+        }
+
+        private int GetAccessTokenExpiryMinutes()
+        {
+            return _config.GetValue<int?>("JwtSettings:AccessTokenExpiryMinutes") ?? 30;
+        }
+
+        private int GetDefaultRefreshExpiryDays()
+        {
+            return _config.GetValue<int?>("JwtSettings:RefreshTokenExpiryDays") ?? 7;
+        }
+
+        private int GetRememberMeRefreshExpiryDays()
+        {
+            return _config.GetValue<int?>("JwtSettings:RememberMeRefreshTokenExpiryDays") ?? 30;
+        }
+
+        private async Task EnsureUpdateSucceededAsync(ApplicationUser user)
+        {
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (updateResult.Succeeded)
+            {
+                return;
+            }
+
+            var reason = string.Join("; ", updateResult.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to persist refresh token: {reason}");
         }
 
         // ========================= ⭐ Cached Roles Logic =========================

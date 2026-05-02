@@ -18,7 +18,7 @@ public static class InternalEndpoints
         });
 
         // GET /api/v1/academic/internal/courses
-        group.MapGet("/courses", async (IUnitOfWork uow) =>
+        group.MapGet("/courses", async (IUnitOfWork uow, IImageHelper imageHelper) =>
         {
             var courses = await uow.Courses.GetAllAsync();
             var result  = new List<object>();
@@ -30,7 +30,7 @@ public static class InternalEndpoints
                 {
                     id            = course.Id,
                     name          = course.Name,
-                    coverImageUrl = course.CoverImageUrl,
+                    coverImageUrl = imageHelper.GetImageUrl(course.CoverImageUrl ?? string.Empty),
                     doctorId      = course.DoctorId,
                     enrolledCount
                 });
@@ -67,7 +67,8 @@ public static class InternalEndpoints
         // GET /api/v1/academic/internal/students/{studentId}/courses
         group.MapGet("/students/{studentId:guid}/courses", async (
             Guid studentId,
-            IUnitOfWork uow) =>
+            IUnitOfWork uow,
+            IImageHelper imageHelper) =>
         {
             var enrollments = await uow.CourseEnrollments.GetAllAsync(e => e.StudentId == studentId);
             var result = new List<object>();
@@ -82,7 +83,7 @@ public static class InternalEndpoints
                 {
                     id            = course.Id,
                     name          = course.Name,
-                    coverImageUrl = course.CoverImageUrl,
+                    coverImageUrl = imageHelper.GetImageUrl(course.CoverImageUrl ?? string.Empty),
                     doctorId      = course.DoctorId,
                     enrolledCount
                 });
@@ -154,7 +155,8 @@ public static class InternalEndpoints
         // GET /api/v1/academic/internal/doctors/{doctorId}/courses
         group.MapGet("/doctors/{doctorId:guid}/courses", async (
             Guid doctorId,
-            IUnitOfWork uow) =>
+            IUnitOfWork uow,
+            IImageHelper imageHelper) =>
         {
             var courses = await uow.Courses.GetAllAsync(c => c.DoctorId == doctorId);
             var result  = new List<object>();
@@ -166,7 +168,7 @@ public static class InternalEndpoints
                 {
                     id            = course.Id,
                     name          = course.Name,
-                    coverImageUrl = course.CoverImageUrl,
+                    coverImageUrl = imageHelper.GetImageUrl(course.CoverImageUrl ?? string.Empty),
                     doctorId      = course.DoctorId,
                     enrolledCount
                 });

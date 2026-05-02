@@ -16,8 +16,8 @@ namespace Auth.Contarcts
         /// Uses a valid refresh token to generate a new access token.
         /// </summary>
         /// <param name="refreshToken">Existing refresh token.</param>
-        /// <returns>New access token if refresh token is valid, otherwise null.</returns>
-        Task<string?> RefreshAccessTokenAsync(string refreshToken);
+        /// <returns>New access + refresh token pair if refresh token is valid, otherwise null.</returns>
+        Task<(string AccessToken, string RefreshToken)?> RefreshAccessTokenAsync(string refreshToken);
 
         /// <summary>
         /// Revokes user's refresh token (used on logout).

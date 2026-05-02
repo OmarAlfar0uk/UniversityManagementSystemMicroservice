@@ -173,9 +173,9 @@ builder.Services.AddAuthorization();
 // ─────────────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalhost", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.SetIsOriginAllowed(origin => true)
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -203,7 +203,7 @@ app.UseMiddleware<SerilogEnricherMiddleware>();
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowLocalhost");
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -18,10 +18,10 @@ namespace AuthService.Features.Auth.Refresh
             RefreshTokenCommand request,
             CancellationToken cancellationToken)
         {
-            var newAccessToken =
+            var tokenPair =
                 await _tokenService.RefreshAccessTokenAsync(request.RefreshToken);
 
-            if (string.IsNullOrEmpty(newAccessToken))
+            if (!tokenPair.HasValue)
             {
                 return EndpointResponse<RefreshTokenResponse>.UnauthorizedResponse(
                     "Invalid or expired refresh token");
@@ -30,7 +30,8 @@ namespace AuthService.Features.Auth.Refresh
             return EndpointResponse<RefreshTokenResponse>.SuccessResponse(
                 new RefreshTokenResponse
                 {
-                    AccessToken = newAccessToken
+                    AccessToken = tokenPair.Value.AccessToken,
+                    RefreshToken = tokenPair.Value.RefreshToken
                 },
                 "Token refreshed successfully"
             );
