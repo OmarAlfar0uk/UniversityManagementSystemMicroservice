@@ -3,6 +3,7 @@ using Auth.Contarcts;
 using Auth.Data.Seeding;
 using Auth.Models;
 using Auth.Repositories;
+using AuthService.Features.Auth.Doctor;
 using Auth.Services;
 using AuthService.Contracts;
 using AuthService.Data;
@@ -19,11 +20,8 @@ using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Reflection;
@@ -289,7 +287,7 @@ namespace Auth_Service
             // Shared (Login, Logout, Activate, Refresh)
             app.MapAuthEndpoints();
             // Role-specific — each team owns their file
-            app.MapAdminAuthEndpoints();
+            app.MapAdminAuthEndpoints(); 
             app.MapDoctorAuthEndpoints();
             app.MapParentAuthEndpoints();
             app.MapStudentAuthEndpoints();

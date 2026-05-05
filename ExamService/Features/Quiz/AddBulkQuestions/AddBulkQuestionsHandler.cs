@@ -56,7 +56,7 @@ public class AddBulkQuestionsHandler : IRequestHandler<AddBulkQuestionsCommand, 
                     UpdatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.QuizQuestionOptions.AddAsync(option);
-                optionResponses.Add(new OptionResponse(option.Id, option.Text));
+                optionResponses.Add(new OptionResponse(option.Id, option.Text, option.IsCorrect));
             }
 
             responses.Add(new QuestionResponse(

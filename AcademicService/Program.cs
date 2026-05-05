@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using AcademicService.Features.Doctor;
 
 namespace AcademicService
 {
@@ -215,13 +216,16 @@ namespace AcademicService
             app.MapCourseEndpoints();
             app.MapDepartmentEndpoints();
             app.MapCourseCatalogEndpoints();
+app.MapCourseEndpoints();
+            app.MapDepartmentEndpoints();
+            app.MapCourseCatalogEndpoints();
             app.MapLectureEndpoints();
             app.MapLectureMaterialEndpoints();
             app.MapAssignmentEndpoints();
-            app.MapDoctorLectureEndpoints();
             app.MapScheduleEndpoints();
             app.MapInternalEndpoints();
 
+            app.MapDoctorLectureEndpoints();
             await app.RunAsync();
         }
 

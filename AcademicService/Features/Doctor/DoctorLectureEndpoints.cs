@@ -1,13 +1,8 @@
 using System.Security.Claims;
-using AcademicService.Features.LectureMaterials;
 using AcademicService.Features.LectureMaterials.GetLecturePdf;
 using AcademicService.Features.LectureMaterials.GetLectureVideo;
 using AcademicService.Features.LectureMaterials.UploadLecturePdf;
 using AcademicService.Features.LectureMaterials.UploadLectureVideo;
-using AcademicService.Features.Assignments;
-using AcademicService.Features.Assignments.CreateAssignment;
-using AcademicService.Features.Assignments.UpdateAssignment;
-using AcademicService.Features.Assignments.DeleteAssignment;
 using AcademicService.Features.Assignments.GetAssignment;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -15,17 +10,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace AcademicService.Features.Doctor
 {
     /// <summary>
-    /// Doctor-specific endpoints — owned by the Doctor team.
-    /// Base route: /api/v1/academic/doctor
+    /// Doctor-specific endpoints - owned by the Doctor team.
+    /// Base route: /api/v1/academic/doctor/lectures
     /// Required roles: Doctor
     /// </summary>
     public static class DoctorLectureEndpoints
     {
-        public static void MapDoctorLectureEndpoints(this IEndpointRouteBuilder app)
+        public static WebApplication MapDoctorLectureEndpoints(this WebApplication app)
         {
             var group = app.MapGroup("/api/v1/academic/doctor/lectures")
                            .RequireAuthorization(p => p.RequireRole("Doctor"))
-                           .WithTags("Doctor – Lectures");
+                           .WithTags("Doctor - Lectures");
 
             // GET /api/v1/academic/doctor/lectures/{lectureId}/pdf
             group.MapGet("{lectureId:guid}/pdf", async (
@@ -44,17 +39,8 @@ namespace AcademicService.Features.Doctor
             {
                 var command = new UploadLecturePdfCommand(lectureId, file);
                 var result = await sender.Send(command);
-                return results.Ok(result);
+                return Results.Ok(result);
             }).WithSummary("Upload/Update PDF for a lecture (Doctor)");
-
-            // DELETE /api/v1/academic/doctor/lectures/{lectureId}/pdf
-            group.MapDelete("{lectureId:guid}/pdf", async (
-                Guid lectureId,
-                ISender sender) =>
-            {
-                await sender.Send(new DeleteLecturePdfCommand(lectureId));
-                return Results.NoContent();
-            }).WithSummary("Delete PDF for a lecture (Doctor)");
 
             // GET /api/v1/academic/doctor/lectures/{lectureId}/video
             group.MapGet("{lectureId:guid}/video", async (
@@ -76,47 +62,16 @@ namespace AcademicService.Features.Doctor
                 return Results.Ok(result);
             }).WithSummary("Upload/Update video for a lecture (Doctor)");
 
-            // DELETE /api/v1/academic/doctor/lectures/{lectureId}/video
-            group.MapDelete("{lectureId:guid}/video", async (
+            // GET /api/v1/academic/doctor/lectures/{lectureId}/assignment
+            group.MapGet("{lectureId:guid}/assignment", async (
                 Guid lectureId,
                 ISender sender) =>
             {
-                await sender.Send(new DeleteLectureVideoCommand(lectureId));
-                return Results.NoContent();
-            }).WithSummary("Delete video for a lecture (Doctor)");
-
-            // POST /api/v1/academic/doctor/lectures/{lectureId}/assignment
-            group.MapPost("{lectureId:guid}/assignment", async (
-                Guid lectureId,
-                [FromForm] string title,
-                IFormFile file,
-                ISender sender) =>
-            {
-                var command = new CreateAssignmentCommand(lectureId, title, file);
-                var result = await sender.Send(command);
-                return Results.Created($"/api/v1/academic/lectures/{lectureId}/assignment", result);
-            }).WithSummary("Create assignment for a lecture (Doctor)");
-
-            // PUT /api/v1/academic/doctor/lectures/{lectureId}/assignment
-            group.MapPut("{lectureId:guid}/assignment", async (
-                Guid lectureId,
-                [FromForm] string? title,
-                IFormFile? file,
-                ISender sender) =>
-            {
-                var command = new UpdateAssignmentCommand(lectureId, title, file);
-                var result = await sender.Send(command);
+                var result = await sender.Send(new GetAssignmentQuery(lectureId));
                 return Results.Ok(result);
-            }).WithSummary("Update assignment for a lecture (Doctor)");
+            }).WithSummary("Get assignment for a lecture (Doctor)");
 
-            // DELETE /api/v1/academic/doctor/lectures/{lectureId}/assignment
-            group.MapDelete("{lectureId:guid}/assignment", async (
-                Guid lectureId,
-                ISender sender) =>
-            {
-                await sender.Send(new DeleteAssignmentCommand(lectureId));
-                return Results.NoContent();
-            }).WithSummary("Delete assignment for a lecture (Doctor)");
+            return app;
         }
     }
 }

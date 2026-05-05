@@ -52,7 +52,7 @@ public class AddQuestionHandler : IRequestHandler<AddQuestionCommand, QuestionRe
                 UpdatedAt = DateTime.UtcNow
             };
             await _unitOfWork.QuizQuestionOptions.AddAsync(option);
-            optionResponses.Add(new OptionResponse(option.Id, option.Text));
+            optionResponses.Add(new OptionResponse(option.Id, option.Text, option.IsCorrect));
         }
 
         await _unitOfWork.SaveChangesAsync();

@@ -1,5 +1,6 @@
 using Auth.Contarcts;
 using Auth.Models;
+using AuthService.Features.Auth.Admin.GetProfile;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 

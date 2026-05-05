@@ -35,7 +35,7 @@ public class GetMessagesHandler : IRequestHandler<GetMessagesQuery, PagedRespons
                 IsMine: m.SenderId == currentUserId,
                 m.Content ?? string.Empty,
                 m.FileUrl,
-                m.FileType?.ToString(),
+                m.FileType.ToString(),
                 m.IsRead,
                 m.SentAt))
             .ToList();

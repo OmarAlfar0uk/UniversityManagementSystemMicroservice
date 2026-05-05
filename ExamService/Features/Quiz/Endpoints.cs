@@ -112,7 +112,9 @@ public static class Endpoints
             [FromBody] UpdateQuestionBody body,
             ISender sender) =>
         {
-            var result = await sender.Send(new UpdateQuestionCommand(questionId, body.Text, body.Points, body.CorrectAnswer));
+            var result = await sender.Send(new UpdateQuestionCommand(
+                questionId, body.Text, body.Points, body.CorrectAnswer,
+                body.Options?.Select(o => new UpdateChoiceRequest(o.ChoiceId, o.Text, o.IsCorrect)).ToList() ?? new List<UpdateChoiceRequest>()));
             return Results.Ok(result);
         }).WithSummary("Update question (Admin/Doctor)");
 
@@ -145,6 +147,6 @@ public static class Endpoints
 public record SubmitBody(List<AnswerRequest> Answers);
 public record CreateQuizBody(Guid CourseId, int TimeLimitInMinutes, int MaxAttempts);
 public record AddQuestionBody(string Text, string Type, int Points, int OrderIndex, string? CorrectAnswer, List<OptionRequest> Options);
-public record UpdateQuestionBody(string Text, int Points, string? CorrectAnswer);
+public record UpdateQuestionBody(string Text, int Points, string? CorrectAnswer, List<UpdateChoiceRequest>? Options);
 public record QuizSettingsBody(int TimeLimitInMinutes, int MaxAttempts);
 public record GradeEssayBody(decimal EarnedPoints);

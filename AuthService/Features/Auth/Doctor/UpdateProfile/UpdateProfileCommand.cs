@@ -1,4 +1,5 @@
 using MediatR;
+using AuthService.Features.Auth.Doctor.GetProfile;
 
 namespace AuthService.Features.Auth.Doctor.UpdateProfile;
 
