@@ -6,7 +6,8 @@ public class SubmitAssignmentFileValidator : AbstractValidator<SubmitAssignmentF
 {
     public SubmitAssignmentFileValidator()
     {
-        RuleFor(x => x.LectureId).NotEmpty();
+        RuleFor(x => x.AssignmentOrLectureId).NotEmpty();
         RuleFor(x => x.StudentId).NotEmpty();
+        RuleFor(x => x.File).NotNull();
     }
 }

@@ -23,8 +23,12 @@ public class GetAssignmentHandler : IRequestHandler<GetAssignmentQuery, Assignme
         return new AssignmentResponse(
             assignment.Id,
             assignment.Title,
+            assignment.Instructions ?? string.Empty,
             string.IsNullOrEmpty(assignment.FileUrl) ? string.Empty : _fileHelper.GetFileUrl(assignment.FileUrl),
-            assignment.LectureId
+            assignment.LectureId,
+            assignment.CourseId,
+            assignment.Deadline,
+            assignment.IsOpen
         );
     }
 }

@@ -25,9 +25,10 @@ public static class Endpoints
                          .RequireAuthorization()
                          .WithTags("Exam – Quiz (Student)");
 
-        student.MapGet("/{lectureId:guid}/quiz", async (Guid lectureId, ISender sender) =>
+        student.MapGet("/{lectureId:guid}/quiz", async (Guid lectureId, ISender sender, ClaimsPrincipal user) =>
         {
-            var result = await sender.Send(new GetQuizQuestionsQuery(lectureId));
+            var studentId = Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var result = await sender.Send(new GetQuizQuestionsQuery(lectureId, studentId));
             return Results.Ok(result);
         }).WithSummary("Get quiz questions (Student)");
 
@@ -38,6 +39,18 @@ public static class Endpoints
             var result = await sender.Send(new GetQuizStatusQuery(lectureId, studentId));
             return Results.Ok(result);
         }).WithSummary("Get quiz attempt status (Student)");
+
+        var quizzes = app.MapGroup("/api/v1/exam/quizzes")
+                         .RequireAuthorization()
+                         .WithTags("Exam - Quiz (Student)");
+
+        quizzes.MapGet("/{quizId:guid}/status", async (
+            Guid quizId, ISender sender, ClaimsPrincipal user) =>
+        {
+            var studentId = Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var result = await sender.Send(new GetQuizStatusQuery(quizId, studentId, ByQuizId: true));
+            return Results.Ok(result);
+        }).WithSummary("Get quiz attempt status by quiz id (Student)");
 
         student.MapPost("/{lectureId:guid}/quiz/submit", async (
             Guid lectureId,

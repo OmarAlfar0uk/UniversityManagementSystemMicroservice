@@ -31,6 +31,8 @@ public class GetCourseByIdHandler : IRequestHandler<GetCourseByIdQuery, CourseDe
             course.Description ?? string.Empty,
             _imageHelper.GetImageUrl(course.CoverImageUrl ?? string.Empty) ?? string.Empty,
             course.DoctorId,
+            course.DoctorFirstName ?? string.Empty,
+            course.DoctorFullName ?? string.Empty,
             lectures.Count(),
             0m,
             course.DepartmentId,

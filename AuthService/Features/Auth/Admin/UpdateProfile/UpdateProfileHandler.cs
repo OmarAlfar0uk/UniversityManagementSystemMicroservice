@@ -1,14 +1,17 @@
 using Auth.Contarcts;
 using Auth.Models;
 using AuthService.Features.Auth.Admin.GetProfile;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Shered.Events;
 
 namespace AuthService.Features.Auth.Admin.UpdateProfile;
 
 public class UpdateProfileHandler(
     UserManager<ApplicationUser> userManager,
-    IImageHelper imageHelper)
+    IImageHelper imageHelper,
+    IPublishEndpoint publishEndpoint)
     : IRequestHandler<UpdateProfileCommand, AdminProfileResponse>
 {
     public async Task<AdminProfileResponse> Handle(
@@ -49,12 +52,20 @@ public class UpdateProfileHandler(
             throw new InvalidOperationException($"Failed to update profile: {errors}");
         }
 
+        await publishEndpoint.Publish(new UserUpdatedEvent(
+            user.Id,
+            user.FirstName ?? string.Empty,
+            user.LastName ?? string.Empty,
+            user.FullName ?? string.Empty,
+            user.Email ?? string.Empty
+        ), cancellationToken);
+
         var roles = await userManager.GetRolesAsync(user);
         var role  = roles.FirstOrDefault() ?? "Admin";
 
         return new AdminProfileResponse(
             Id:              user.Id,
-            FullName:        user.FullName,
+            FullName:        user.FullName ?? string.Empty,
             Email:           user.Email ?? string.Empty,
             ProfileImageUrl: string.IsNullOrWhiteSpace(user.ProfileImageUrl)
                              ? null

@@ -39,6 +39,8 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
                 c.Description ?? string.Empty,
                 _imageHelper.GetImageUrl(c.CoverImageUrl ?? string.Empty) ?? string.Empty,
                 c.DoctorId,
+                c.DoctorFirstName ?? string.Empty,
+                c.DoctorFullName ?? string.Empty,
                 0m,
                 c.DepartmentId,
                 c.CourseCatalogId

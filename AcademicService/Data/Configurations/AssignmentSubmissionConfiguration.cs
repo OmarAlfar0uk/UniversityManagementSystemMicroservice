@@ -17,6 +17,18 @@ public class AssignmentSubmissionConfiguration : IEntityTypeConfiguration<Assign
         builder.Property(s => s.FileUrl)
             .HasMaxLength(500);
 
+        builder.Property(s => s.StudentFirstName)
+            .HasMaxLength(100)
+            .HasDefaultValue(string.Empty);
+
+        builder.Property(s => s.StudentFullName)
+            .HasMaxLength(200)
+            .HasDefaultValue(string.Empty);
+
+        builder.Property(s => s.StudentEmail)
+            .HasMaxLength(256)
+            .HasDefaultValue(string.Empty);
+
         builder.Property(s => s.ProjectUrl)
             .HasMaxLength(500);
 

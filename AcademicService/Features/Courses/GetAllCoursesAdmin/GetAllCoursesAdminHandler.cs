@@ -31,6 +31,8 @@ public class GetAllCoursesAdminHandler
                 Id: course.Id,
                 Name: course.Name,
                 DoctorId: course.DoctorId,
+                DoctorFirstName: course.DoctorFirstName ?? string.Empty,
+                DoctorFullName: course.DoctorFullName ?? string.Empty,
                 CoverImageUrl: _imageHelper.GetImageUrl(course.CoverImageUrl ?? string.Empty),
                 EnrolledCount: enrolledCount,
                 DepartmentId: course.DepartmentId

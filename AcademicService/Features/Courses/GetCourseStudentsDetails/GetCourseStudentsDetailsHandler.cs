@@ -21,7 +21,8 @@ public class GetCourseStudentsDetailsHandler : IRequestHandler<GetCourseStudents
 
         return enrollments.Select(e => new StudentDetailItem(
             StudentId: e.StudentId,
-            FullName: null,       // cross-service — Frontend resolves
+            FirstName: e.StudentFirstName ?? string.Empty,
+            FullName: e.StudentFullName ?? string.Empty,
             MidtermGrade: null,   // cross-service
             FinalGrade: null,     // cross-service
             AttendedLecturesCount: 0  // cross-service

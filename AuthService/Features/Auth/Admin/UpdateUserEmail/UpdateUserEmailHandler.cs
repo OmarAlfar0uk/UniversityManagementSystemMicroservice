@@ -1,8 +1,10 @@
 using Auth.Models;
 using Auth_Service.Features.Shared;
 using AuthService.Contracts;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Shered.Events;
 
 namespace AuthService.Features.Auth.Admin.UpdateUserEmail
 {
@@ -11,13 +13,16 @@ namespace AuthService.Features.Auth.Admin.UpdateUserEmail
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IAuthAuditLogger _auditLogger;
+        private readonly IPublishEndpoint _publishEndpoint;
 
         public UpdateUserEmailHandler(
             UserManager<ApplicationUser> userManager,
-            IAuthAuditLogger auditLogger)
+            IAuthAuditLogger auditLogger,
+            IPublishEndpoint publishEndpoint)
         {
             _userManager = userManager;
             _auditLogger = auditLogger;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<EndpointResponse<string>> Handle(
@@ -49,6 +54,14 @@ namespace AuthService.Features.Auth.Admin.UpdateUserEmail
             await _auditLogger.LogAsync(
                 action: "UpdateUserEmail",
                 targetId: request.UserId.ToString());
+
+            await _publishEndpoint.Publish(new UserUpdatedEvent(
+                user.Id,
+                user.FirstName ?? string.Empty,
+                user.LastName ?? string.Empty,
+                user.FullName ?? string.Empty,
+                user.Email ?? string.Empty
+            ), cancellationToken);
 
             return EndpointResponse<string>.SuccessResponse(
                 $"Email updated to {request.NewEmail}",

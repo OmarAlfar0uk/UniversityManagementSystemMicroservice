@@ -3,4 +3,4 @@ using MediatR;
 
 namespace ExamService.Features.Quiz.GetQuizQuestions;
 
-public record GetQuizQuestionsQuery(Guid LectureId) : IRequest<QuizResponse>;
+public record GetQuizQuestionsQuery(Guid LectureId, Guid StudentId) : IRequest<QuizResponse>;

@@ -14,6 +14,18 @@ public class CourseEnrollmentConfiguration : IEntityTypeConfiguration<CourseEnro
 
         builder.ToTable("CourseEnrollments");
 
+        builder.Property(e => e.StudentFirstName)
+            .HasMaxLength(100)
+            .HasDefaultValue(string.Empty);
+
+        builder.Property(e => e.StudentFullName)
+            .HasMaxLength(200)
+            .HasDefaultValue(string.Empty);
+
+        builder.Property(e => e.StudentEmail)
+            .HasMaxLength(256)
+            .HasDefaultValue(string.Empty);
+
         builder.Property(e => e.CreatedAt)
             .HasDefaultValueSql("GETUTCDATE()");
 

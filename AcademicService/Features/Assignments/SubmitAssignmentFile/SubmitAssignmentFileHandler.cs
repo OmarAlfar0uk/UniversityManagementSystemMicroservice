@@ -1,5 +1,6 @@
 using AcademicService.Contracts;
 using AcademicService.Data.Models;
+using AcademicService.Middlewares;
 using MassTransit;
 using MediatR;
 using Shered.Events;
@@ -22,22 +23,39 @@ public class SubmitAssignmentFileHandler : IRequestHandler<SubmitAssignmentFileC
 
     public async Task<Unit> Handle(SubmitAssignmentFileCommand request, CancellationToken cancellationToken)
     {
-        var assignment = await _unitOfWork.Assignments.FindAsync(a => a.LectureId == request.LectureId);
+        var assignment = request.ByAssignmentId
+            ? await _unitOfWork.Assignments.GetByIdAsync(request.AssignmentOrLectureId)
+            : await _unitOfWork.Assignments.FindAsync(a => a.LectureId == request.AssignmentOrLectureId);
+
         if (assignment is null)
-            throw new KeyNotFoundException($"No assignment found for lecture {request.LectureId}.");
+            throw new KeyNotFoundException(
+                request.ByAssignmentId
+                    ? $"Assignment {request.AssignmentOrLectureId} not found."
+                    : $"No assignment found for lecture {request.AssignmentOrLectureId}.");
+
+        if (!assignment.IsOpen)
+            throw new ArgumentException("Assignment is closed.");
+
+        if (DateTime.UtcNow > assignment.Deadline)
+            throw new ArgumentException("Deadline has passed");
 
         var existing = await _unitOfWork.AssignmentSubmissions.FindAsync(
             s => s.AssignmentId == assignment.Id && s.StudentId == request.StudentId);
         if (existing is not null)
-            throw new InvalidOperationException("Assignment already submitted.");
+            throw new ConflictException("Assignment already submitted.");
 
         var relativePath = await _fileHelper.SaveFileAsync(request.File, "Assignments");
+        var enrollment = await _unitOfWork.CourseEnrollments.FindAsync(
+            e => e.CourseId == assignment.CourseId && e.StudentId == request.StudentId);
 
         var submission = new AssignmentSubmission
         {
             Id = Guid.NewGuid(),
             AssignmentId = assignment.Id,
             StudentId = request.StudentId,
+            StudentFirstName = enrollment?.StudentFirstName ?? string.Empty,
+            StudentFullName = enrollment?.StudentFullName ?? string.Empty,
+            StudentEmail = enrollment?.StudentEmail ?? string.Empty,
             FileUrl = relativePath,
             SubmittedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,

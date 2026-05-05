@@ -2,4 +2,9 @@ using MediatR;
 
 namespace AcademicService.Features.Assignments.SubmitAssignmentFile;
 
-public record SubmitAssignmentFileCommand(Guid LectureId, Guid StudentId, IFormFile File) : IRequest;
+public record SubmitAssignmentFileCommand(
+    Guid AssignmentOrLectureId,
+    Guid StudentId,
+    IFormFile File,
+    bool ByAssignmentId = false
+) : IRequest;

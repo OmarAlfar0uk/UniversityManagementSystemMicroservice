@@ -6,6 +6,8 @@ public record AdminCourseItem(
     Guid Id,
     string Name,
     Guid DoctorId,
+    string DoctorFirstName,
+    string DoctorFullName,
     string? CoverImageUrl,
     int EnrolledCount,
     Guid? DepartmentId

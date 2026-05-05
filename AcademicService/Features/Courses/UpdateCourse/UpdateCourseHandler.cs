@@ -35,6 +35,9 @@ public class UpdateCourseHandler : IRequestHandler<UpdateCourseCommand, CourseRe
         course.Name = request.Name;
         course.Description = request.Description;
         course.DoctorId = request.DoctorId;
+        course.DoctorFirstName = string.Empty;
+        course.DoctorFullName = string.Empty;
+        course.DoctorEmail = string.Empty;
         course.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Courses.Update(course);
@@ -46,6 +49,8 @@ public class UpdateCourseHandler : IRequestHandler<UpdateCourseCommand, CourseRe
             course.Description ?? string.Empty,
             _imageHelper.GetImageUrl(course.CoverImageUrl ?? string.Empty) ?? string.Empty,
             course.DoctorId,
+            course.DoctorFirstName,
+            course.DoctorFullName,
             0m,
             course.DepartmentId,
             course.CourseCatalogId

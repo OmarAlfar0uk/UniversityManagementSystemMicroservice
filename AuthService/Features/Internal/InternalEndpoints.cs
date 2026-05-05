@@ -42,8 +42,9 @@ public static class InternalEndpoints
             return Results.Ok(new
             {
                 id              = user.Id,
-                fullName        = user.FullName,
-                email           = user.Email,
+                firstName       = user.FirstName ?? string.Empty,
+                fullName        = user.FullName ?? string.Empty,
+                email           = user.Email ?? string.Empty,
                 role            = roles.FirstOrDefault() ?? string.Empty,
                 profileImageUrl = user.ProfileImageUrl,
                 department      = department
@@ -61,7 +62,8 @@ public static class InternalEndpoints
                 .Select(u => new
                 {
                     id           = u.Id,
-                    fullName     = u.FullName,
+                    firstName    = u.FirstName ?? string.Empty,
+                    fullName     = u.FullName ?? string.Empty,
                     universityId = u.UniversityId,
                     departmentId = u.DepartmentId
                 })

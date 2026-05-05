@@ -24,6 +24,18 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
         builder.Property(c => c.CoverImageUrl)
             .HasMaxLength(500);
 
+        builder.Property(c => c.DoctorFirstName)
+            .HasMaxLength(100)
+            .HasDefaultValue(string.Empty);
+
+        builder.Property(c => c.DoctorFullName)
+            .HasMaxLength(200)
+            .HasDefaultValue(string.Empty);
+
+        builder.Property(c => c.DoctorEmail)
+            .HasMaxLength(256)
+            .HasDefaultValue(string.Empty);
+
         builder.Property(c => c.DepartmentId);
 
         builder.Property(c => c.CourseCatalogId);

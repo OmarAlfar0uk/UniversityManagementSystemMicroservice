@@ -29,14 +29,16 @@ public class GetCourseInstructorHandler : IRequestHandler<GetCourseInstructorQue
         if (course is null)
             throw new KeyNotFoundException($"Course {request.CourseId} not found.");
 
-        string fullName = string.Empty;
+        string firstName = course.DoctorFirstName ?? string.Empty;
+        string fullName = course.DoctorFullName ?? string.Empty;
         string? profileImage = null;
         string? department = null;
 
         var userInfo = await _authServiceClient.GetUserInfoAsync(course.DoctorId);
         if (userInfo is not null)
         {
-            fullName = userInfo.FullName;
+            firstName = userInfo.FirstName ?? string.Empty;
+            fullName = userInfo.FullName ?? string.Empty;
             profileImage = userInfo.ProfileImageUrl;
             department = userInfo.Department;
         }
@@ -44,6 +46,7 @@ public class GetCourseInstructorHandler : IRequestHandler<GetCourseInstructorQue
         return new InstructorResponse(
             course.DoctorId,
             course.Id,
+            firstName ?? string.Empty,
             fullName,
             profileImage,
             department

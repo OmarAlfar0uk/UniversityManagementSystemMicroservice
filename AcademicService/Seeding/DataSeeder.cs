@@ -141,6 +141,10 @@ public static class DataSeeder
                 Title = "Assignment 1: Variables",
                 FileUrl = "https://example.com/assignment1.pdf",
                 LectureId = lecture1.Id,
+                CourseId = course1.Id,
+                Instructions = "Solve the variables practice and submit your file.",
+                Deadline = DateTime.UtcNow.AddDays(14),
+                IsOpen = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

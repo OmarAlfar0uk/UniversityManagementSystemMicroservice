@@ -36,6 +36,7 @@ namespace ExamService.Middlewares
             var statusCode = ex switch
             {
                 UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
+                ForbiddenException => StatusCodes.Status403Forbidden,
                 KeyNotFoundException => StatusCodes.Status404NotFound,
                 ArgumentException => StatusCodes.Status400BadRequest,
                 InvalidOperationException => StatusCodes.Status400BadRequest,
@@ -45,6 +46,7 @@ namespace ExamService.Middlewares
             var message = statusCode switch
             {
                 StatusCodes.Status401Unauthorized => "Unauthorized",
+                StatusCodes.Status403Forbidden => ex.Message,
                 StatusCodes.Status404NotFound => ex.Message,
                 StatusCodes.Status400BadRequest => ex.Message,
                 _ => "An unexpected error occurred"

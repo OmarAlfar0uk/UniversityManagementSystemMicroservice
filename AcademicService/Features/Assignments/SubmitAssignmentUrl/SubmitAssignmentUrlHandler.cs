@@ -1,5 +1,6 @@
 using AcademicService.Contracts;
 using AcademicService.Data.Models;
+using AcademicService.Middlewares;
 using MassTransit;
 using MediatR;
 using Shered.Events;
@@ -23,16 +24,28 @@ public class SubmitAssignmentUrlHandler : IRequestHandler<SubmitAssignmentUrlCom
         if (assignment is null)
             throw new KeyNotFoundException($"No assignment found for lecture {request.LectureId}.");
 
+        if (!assignment.IsOpen)
+            throw new ArgumentException("Assignment is closed.");
+
+        if (DateTime.UtcNow > assignment.Deadline)
+            throw new ArgumentException("Deadline has passed");
+
         var existing = await _unitOfWork.AssignmentSubmissions.FindAsync(
             s => s.AssignmentId == assignment.Id && s.StudentId == request.StudentId);
         if (existing is not null)
-            throw new InvalidOperationException("Assignment already submitted.");
+            throw new ConflictException("Assignment already submitted.");
+
+        var enrollment = await _unitOfWork.CourseEnrollments.FindAsync(
+            e => e.CourseId == assignment.CourseId && e.StudentId == request.StudentId);
 
         var submission = new AssignmentSubmission
         {
             Id = Guid.NewGuid(),
             AssignmentId = assignment.Id,
             StudentId = request.StudentId,
+            StudentFirstName = enrollment?.StudentFirstName ?? string.Empty,
+            StudentFullName = enrollment?.StudentFullName ?? string.Empty,
+            StudentEmail = enrollment?.StudentEmail ?? string.Empty,
             ProjectUrl = request.ProjectUrl,
             SubmittedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,

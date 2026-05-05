@@ -18,8 +18,17 @@ public class AssignmentConfiguration : IEntityTypeConfiguration<Assignment>
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.Property(a => a.Instructions)
+            .HasMaxLength(2000)
+            .HasDefaultValue(string.Empty);
+
         builder.Property(a => a.FileUrl)
             .HasMaxLength(500);
+
+        builder.Property(a => a.Deadline);
+
+        builder.Property(a => a.IsOpen)
+            .HasDefaultValue(true);
 
         builder.Property(a => a.CreatedAt)
             .HasDefaultValueSql("GETUTCDATE()");

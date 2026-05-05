@@ -1,4 +1,5 @@
 using AcademicService.Contracts;
+using AcademicService.Consumers;
 using AcademicService.Data;
 using AcademicService.Features.Assignments;
 using AcademicService.Features.CourseCatalogs;
@@ -159,6 +160,8 @@ namespace AcademicService
             #region massTransit with RabbitMQ
             builder.Services.AddMassTransit(x =>
             {
+                x.AddConsumer<UserUpdatedConsumer>();
+
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     var rabbitSettings = builder.Configuration.GetSection("RabbitMQ");
@@ -166,6 +169,11 @@ namespace AcademicService
                     {
                         h.Username(rabbitSettings["Username"] ?? "guest");
                         h.Password(rabbitSettings["Password"] ?? "guest");
+                    });
+
+                    cfg.ReceiveEndpoint("academic-user-updated-queue", e =>
+                    {
+                        e.ConfigureConsumer<UserUpdatedConsumer>(context);
                     });
                 });
             });
@@ -212,7 +220,7 @@ namespace AcademicService
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
-
+            
             app.MapCourseEndpoints();
             app.MapDepartmentEndpoints();
             app.MapCourseCatalogEndpoints();

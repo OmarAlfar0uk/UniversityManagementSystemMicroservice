@@ -3,4 +3,4 @@ using MediatR;
 
 namespace ExamService.Features.Quiz.GetQuizStatus;
 
-public record GetQuizStatusQuery(Guid LectureId, Guid StudentId) : IRequest<QuizStatusResponse>;
+public record GetQuizStatusQuery(Guid QuizOrLectureId, Guid StudentId, bool ByQuizId = false) : IRequest<QuizStatusResponse>;
