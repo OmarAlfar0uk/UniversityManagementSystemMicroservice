@@ -26,28 +26,29 @@ namespace AuthService.Features.Auth.Doctor
             }).WithSummary("Get Doctor profile");
 
             // PUT /api/v1/auth/doctor/profile
+            // PUT /api/v1/auth/doctor/profile
             group.MapPut("/profile", async (
-                HttpContext context,
-                IMediator mediator,
-                HttpRequest request) =>
-            {
-                var userId = context.User.FindFirst("id")?.Value
-                    ?? throw new InvalidOperationException("User ID claim not found.");
+                    HttpContext context,
+                    IMediator mediator,
+                    [FromForm] string? fullName,
+                    [FromForm] string? phoneNumber,
+                    IFormFile? profileImage) =>
+                {
+                    var userId = context.User.FindFirst("id")?.Value
+                                 ?? throw new InvalidOperationException("User ID claim not found.");
 
-                var fullName = request.Form["fullName"].FirstOrDefault();
-                var phoneNumber = request.Form["phoneNumber"].FirstOrDefault();
-                var profileImage = request.Form.Files["profileImage"];
+                    var command = new UpdateProfileCommand(
+                        Guid.Parse(userId),
+                        string.IsNullOrWhiteSpace(fullName) ? null : fullName,
+                        string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber,
+                        profileImage
+                    );
 
-                var command = new UpdateProfileCommand(
-                    Guid.Parse(userId),
-                    string.IsNullOrWhiteSpace(fullName) ? null : fullName,
-                    string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber,
-                    profileImage
-                );
-
-                var result = await mediator.Send(command);
-                return Results.Ok(result);
-            }).WithSummary("Update Doctor profile");
+                    var result = await mediator.Send(command);
+                    return Results.Ok(result);
+                })
+                .DisableAntiforgery()
+                .WithSummary("Update Doctor profile");
 
             return app;
         }
