@@ -216,9 +216,6 @@ namespace AcademicService
             app.MapCourseEndpoints();
             app.MapDepartmentEndpoints();
             app.MapCourseCatalogEndpoints();
-app.MapCourseEndpoints();
-            app.MapDepartmentEndpoints();
-            app.MapCourseCatalogEndpoints();
             app.MapLectureEndpoints();
             app.MapLectureMaterialEndpoints();
             app.MapAssignmentEndpoints();
