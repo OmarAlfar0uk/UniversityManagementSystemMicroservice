@@ -29,7 +29,7 @@ public class GetQuizQuestionsHandler : IRequestHandler<GetQuizQuestionsQuery, Qu
                 q.Text,
                 q.Type.ToString(),
                 q.Points,
-                options.Select(o => new OptionResponse(o.Id, o.Text)).ToList()
+                options.Select(o => new OptionResponse(o.Id, o.Text, o.IsCorrect)).ToList()
             ));
         }
 

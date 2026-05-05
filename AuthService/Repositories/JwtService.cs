@@ -40,7 +40,7 @@ namespace Auth.Repositories
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
             if (user.DepartmentId.HasValue)
-                claims.Add(new Claim("DepartmentId", user.DepartmentId.Value.ToString()));
+                claims.Add(new Claim("departmentId", user.DepartmentId.Value.ToString()));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -117,7 +117,7 @@ namespace Auth.Repositories
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
             if (user.DepartmentId.HasValue)
-                claims.Add(new Claim("DepartmentId", user.DepartmentId.Value.ToString()));
+                claims.Add(new Claim("departmentId", user.DepartmentId.Value.ToString()));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

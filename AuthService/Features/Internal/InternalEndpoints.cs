@@ -30,12 +30,23 @@ public static class InternalEndpoints
             if (user is null) return Results.NotFound();
 
             var roles = await userManager.GetRolesAsync(user);
+
+            // Get department name if DepartmentId exists
+            string? department = null;
+            if (user.DepartmentId.HasValue)
+            {
+                // Department lookup would need DbContext - for now return null
+                // This can be enhanced later with department service
+            }
+
             return Results.Ok(new
             {
-                id       = user.Id,
-                fullName = user.FullName,
-                email    = user.Email,
-                role     = roles.FirstOrDefault() ?? string.Empty
+                id              = user.Id,
+                fullName        = user.FullName,
+                email           = user.Email,
+                role            = roles.FirstOrDefault() ?? string.Empty,
+                profileImageUrl = user.ProfileImageUrl,
+                department      = department
             });
         });
 

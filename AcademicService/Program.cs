@@ -74,22 +74,41 @@ namespace AcademicService
             #region CORS
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", builder => builder
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .SetIsOriginAllowed(origin => true)
-                    .AllowCredentials());
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:4200",
+                            "https://localhost:4200",
+                            "https://learnify.tech",
+                            "https://www.learnify.tech",
+                            "https://academic.learnefy.tech",
+                            "https://auth.learnefy.tech",
+                            "https://reporting.learnefy.tech",
+                            "https://progress.learnefy.tech"
+                        )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
             });
             #endregion
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAcademicAuditLogger, AcademicAuditLogger>();
-            
+
+            // HTTP Clients
+            builder.Services.AddHttpClient<IStudentDirectoryClient, AuthStudentDirectoryClient>();
+            builder.Services.AddHttpClient("AuthService", client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["Services:AuthService"] ?? "http://authservice:8081");
+            });
+            builder.Services.AddScoped<IAuthServiceClient, AuthServiceClient>();
+
             // Helpers
             builder.Services.AddScoped<IImageHelper, ImageHelper>();
             builder.Services.AddScoped<IVideoHelper, VideoHelper>();
             builder.Services.AddScoped<IFileHelper, FileHelper>();
-            builder.Services.AddHttpClient<IStudentDirectoryClient, AuthStudentDirectoryClient>();
 
             #region MediatR & Validation
             builder.Services.AddMediatR(typeof(Program).Assembly);
@@ -199,6 +218,7 @@ namespace AcademicService
             app.MapLectureEndpoints();
             app.MapLectureMaterialEndpoints();
             app.MapAssignmentEndpoints();
+            app.MapDoctorLectureEndpoints();
             app.MapScheduleEndpoints();
             app.MapInternalEndpoints();
 

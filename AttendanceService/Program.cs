@@ -58,19 +58,19 @@ namespace AttendanceService
             #region CORS
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("FrontendCors", policy =>
+                options.AddPolicy("AllowAll", policy =>
                 {
-                    var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
-                    if (origins is { Length: > 0 })
-                    {
-                        policy.WithOrigins(origins)
-                            .AllowAnyMethod()
-                            .AllowCredentials()
-                            .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-Correlation-Id");
-                        return;
-                    }
-
-                    policy.SetIsOriginAllowed(_ => true)
+                    policy
+                        .WithOrigins(
+                            "http://localhost:4200",
+                            "https://localhost:4200",
+                            "https://learnify.tech",
+                            "https://www.learnify.tech",
+                            "https://academic.learnefy.tech",
+                            "https://auth.learnefy.tech",
+                            "https://reporting.learnefy.tech",
+                            "https://progress.learnefy.tech"
+                        )
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials();
@@ -139,7 +139,7 @@ namespace AttendanceService
             app.UseMiddleware<SerilogEnricherMiddleware>();
 
             app.UseHttpsRedirection();
-            app.UseCors("FrontendCors");
+            app.UseCors("AllowAll");
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();

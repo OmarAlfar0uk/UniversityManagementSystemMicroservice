@@ -1,6 +1,6 @@
 namespace ExamService.Features.Quiz.GetQuizQuestions;
 
-public record OptionResponse(Guid Id, string Text);
+public record OptionResponse(Guid Id, string Text, bool IsCorrect);
 
 public record QuestionResponse(
     Guid Id,

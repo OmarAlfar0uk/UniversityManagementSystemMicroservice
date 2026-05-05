@@ -76,7 +76,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// ── Build ─────────────────────────────────────────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────────────────
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:4200",
+                "https://localhost:4200",
+                "https://learnify.tech",
+                "https://www.learnify.tech",
+                "https://academic.learnefy.tech",
+                "https://auth.learnefy.tech",
+                "https://reporting.learnefy.tech",
+                "https://progress.learnefy.tech"
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
+// ── Build ─────────────────────────────────────────────────────────────
 var app = builder.Build();
 
 //if (app.Environment.IsDevelopment())
@@ -88,6 +110,7 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 

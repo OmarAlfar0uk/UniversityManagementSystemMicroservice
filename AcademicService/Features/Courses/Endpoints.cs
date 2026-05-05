@@ -7,6 +7,8 @@ using AcademicService.Features.Courses.GetCourseById;
 using AcademicService.Features.Courses.GetCourseInstructor;
 using AcademicService.Features.Courses.UpdateCourse;
 using AcademicService.Features.Courses.GetAllCoursesAdmin;
+using AcademicService.Features.Courses.GetCourseStudentsDetails;
+using AcademicService.Features.Courses.GetCourseLecturesAdmin;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -108,6 +110,24 @@ public static class Endpoints
             await sender.Send(new EnrollStudentsCommand(courseId, body.StudentIds));
             return Results.Ok(new { message = "Students enrolled successfully." });
         }).WithSummary("Enroll students into a course (Admin)");
+
+        admin.MapGet("/{courseId:guid}/students-details", async (
+            Guid courseId,
+            ISender sender) =>
+        {
+            var result = await sender.Send(new GetCourseStudentsDetailsQuery(courseId));
+            return Results.Ok(result);
+        })
+        .WithSummary("Get enrolled students details for a course (Admin/Doctor)");
+
+        admin.MapGet("/{courseId:guid}/lectures", async (
+            Guid courseId,
+            ISender sender) =>
+        {
+            var result = await sender.Send(new GetCourseLecturesAdminQuery(courseId));
+            return Results.Ok(result);
+        })
+        .WithSummary("Get all lectures with upload status for a course (Admin)");
     }
 }
 

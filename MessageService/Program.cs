@@ -58,6 +58,11 @@ builder.Services.AddScoped<MessageService.Contracts.IUnitOfWork, MessageService.
 builder.Services.AddScoped<MessageService.Contracts.IImageHelper, MessageService.Services.ImageHelper>();
 builder.Services.AddScoped<MessageService.Contracts.IFileHelper, MessageService.Services.FileHelper>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("AuthService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:AuthService"] ?? "http://localhost:8081");
+});
+builder.Services.AddScoped<MessageService.Contracts.IAuthServiceClient, MessageService.Services.AuthServiceClient>();
 builder.Services.AddHttpClient("Gemini", client =>
 {
     client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");
@@ -86,19 +91,19 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendCors", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
-        if (origins is { Length: > 0 })
-        {
-            policy.WithOrigins(origins)
-                .AllowAnyMethod()
-                .AllowCredentials()
-                .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-Correlation-Id");
-            return;
-        }
-
-        policy.SetIsOriginAllowed(_ => true)
+        policy
+            .WithOrigins(
+                "http://localhost:4200",
+                "https://localhost:4200",
+                "https://learnify.tech",
+                "https://www.learnify.tech",
+                "https://academic.learnefy.tech",
+                "https://auth.learnefy.tech",
+                "https://reporting.learnefy.tech",
+                "https://progress.learnefy.tech"
+            )
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
@@ -129,7 +134,7 @@ app.UseMiddleware<MessageService.Middlewares.GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 
-app.UseCors("FrontendCors");
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 

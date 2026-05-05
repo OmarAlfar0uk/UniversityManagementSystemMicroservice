@@ -4,9 +4,11 @@ using AuthService.Features.Auth.Admin.Create;
 using AuthService.Features.Auth.Admin.CreateDoctor;
 using AuthService.Features.Auth.Admin.CreateStudent;
 using AuthService.Features.Auth.Admin.DeleteUser;
+using AuthService.Features.Auth.Admin.GetProfile;
 using AuthService.Features.Auth.Admin.GetStudentsByDepartment;
 using AuthService.Features.Auth.Admin.GetUsers;
 using AuthService.Features.Auth.Admin.ToggleUserStatus;
+using AuthService.Features.Auth.Admin.UpdateProfile;
 using AuthService.Features.Auth.Admin.UpdateUserEmail;
 using MediatR;
 using Microsoft.AspNetCore.Routing;
@@ -80,6 +82,18 @@ namespace AuthService.Features.Auth.Admin
                  .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"))
                  .WithSummary("Update a user's email")
                  .WithDescription("Updates the user email correctly (NormalizedEmail included). Use this instead of editing the DB manually.");
+
+            // GET /api/v1/auth/admin/profile
+            group.MapGet("/profile", GetAdminProfile)
+                 .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"))
+                 .WithSummary("Get Admin profile")
+                 .WithDescription("Returns the profile of the currently authenticated Admin or SuperAdmin.");
+
+            // PUT /api/v1/auth/admin/profile
+            group.MapPut("/profile", UpdateAdminProfile)
+                 .RequireAuthorization(policy => policy.RequireRole("Admin", "SuperAdmin"))
+                 .WithSummary("Update Admin profile")
+                 .WithDescription("Updates the profile of the currently authenticated Admin or SuperAdmin. Supports multipart/form-data for image upload.");
 
             return app;
         }
@@ -164,6 +178,40 @@ namespace AuthService.Features.Auth.Admin
             command.UserId = userId;
             var result = await mediator.Send(command);
             return result.ToHttpResult();
+        }
+
+        private static async Task<IResult> GetAdminProfile(
+            HttpContext context,
+            IMediator mediator)
+        {
+            var userId = context.User.FindFirst("id")?.Value
+                ?? throw new InvalidOperationException("User ID claim not found.");
+            var query = new GetProfileQuery(Guid.Parse(userId));
+            var result = await mediator.Send(query);
+            return Results.Ok(result);
+        }
+
+        private static async Task<IResult> UpdateAdminProfile(
+            HttpContext context,
+            IMediator mediator,
+            HttpRequest request)
+        {
+            var userId = context.User.FindFirst("id")?.Value
+                ?? throw new InvalidOperationException("User ID claim not found.");
+
+            var fullName = request.Form["fullName"].FirstOrDefault();
+            var phoneNumber = request.Form["phoneNumber"].FirstOrDefault();
+            var profileImage = request.Form.Files["profileImage"];
+
+            var command = new UpdateProfileCommand(
+                Guid.Parse(userId),
+                string.IsNullOrWhiteSpace(fullName) ? null : fullName,
+                string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber,
+                profileImage
+            );
+
+            var result = await mediator.Send(command);
+            return Results.Ok(result);
         }
     }
 }

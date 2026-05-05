@@ -55,11 +55,23 @@ namespace ExamService
             #region CORS
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", builder => builder
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .SetIsOriginAllowed(origin => true)
-                    .AllowCredentials());
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:4200",
+                            "https://localhost:4200",
+                            "https://learnify.tech",
+                            "https://www.learnify.tech",
+                            "https://academic.learnefy.tech",
+                            "https://auth.learnefy.tech",
+                            "https://reporting.learnefy.tech",
+                            "https://progress.learnefy.tech"
+                        )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
             });
             #endregion
 
