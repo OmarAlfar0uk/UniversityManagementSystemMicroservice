@@ -1,4 +1,5 @@
 using AcademicService.Contracts;
+using AcademicService.Features.Courses;
 using MediatR;
 
 namespace AcademicService.Features.Courses.GetAllCoursesAdmin;
@@ -8,18 +9,25 @@ public class GetAllCoursesAdminHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IImageHelper _imageHelper;
+    private readonly IAuthServiceClient _authServiceClient;
 
-    public GetAllCoursesAdminHandler(IUnitOfWork unitOfWork, IImageHelper imageHelper)
+    public GetAllCoursesAdminHandler(
+        IUnitOfWork unitOfWork,
+        IImageHelper imageHelper,
+        IAuthServiceClient authServiceClient)
     {
         _unitOfWork = unitOfWork;
         _imageHelper = imageHelper;
+        _authServiceClient = authServiceClient;
     }
 
     public async Task<GetAllCoursesAdminResponse> Handle(
         GetAllCoursesAdminQuery request,
         CancellationToken cancellationToken)
     {
-        var courses = await _unitOfWork.Courses.GetAllAsync();
+        var courses = (await _unitOfWork.Courses.GetAllAsync()).ToList();
+        await CourseDoctorInfoMapper.EnrichAsync(courses, _authServiceClient);
+
         var items = new List<AdminCourseItem>();
 
         foreach (var course in courses)

@@ -1,4 +1,5 @@
 using AcademicService.Contracts;
+using AcademicService.Features.Courses;
 using AcademicService.Features.Courses.GetAllCourses;
 using MediatR;
 
@@ -8,11 +9,16 @@ public class UpdateCourseHandler : IRequestHandler<UpdateCourseCommand, CourseRe
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IImageHelper _imageHelper;
+    private readonly IAuthServiceClient _authServiceClient;
 
-    public UpdateCourseHandler(IUnitOfWork unitOfWork, IImageHelper imageHelper)
+    public UpdateCourseHandler(
+        IUnitOfWork unitOfWork,
+        IImageHelper imageHelper,
+        IAuthServiceClient authServiceClient)
     {
         _unitOfWork = unitOfWork;
         _imageHelper = imageHelper;
+        _authServiceClient = authServiceClient;
     }
 
     public async Task<CourseResponse> Handle(
@@ -42,6 +48,8 @@ public class UpdateCourseHandler : IRequestHandler<UpdateCourseCommand, CourseRe
 
         _unitOfWork.Courses.Update(course);
         await _unitOfWork.SaveChangesAsync();
+
+        await CourseDoctorInfoMapper.EnrichAsync(course, _authServiceClient);
 
         return new CourseResponse(
             course.Id,

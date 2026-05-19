@@ -1,4 +1,5 @@
 using AcademicService.Contracts;
+using AcademicService.Features.Courses;
 using MediatR;
 
 namespace AcademicService.Features.Courses.GetAllCourses;
@@ -7,11 +8,16 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IImageHelper _imageHelper;
+    private readonly IAuthServiceClient _authServiceClient;
 
-    public GetAllCoursesHandler(IUnitOfWork unitOfWork, IImageHelper imageHelper)
+    public GetAllCoursesHandler(
+        IUnitOfWork unitOfWork,
+        IImageHelper imageHelper,
+        IAuthServiceClient authServiceClient)
     {
         _unitOfWork = unitOfWork;
         _imageHelper = imageHelper;
+        _authServiceClient = authServiceClient;
     }
 
     public async Task<PagedResponse<CourseResponse>> Handle(
@@ -33,6 +39,11 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
         var paged = allCourses
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
+            .ToList();
+
+        await CourseDoctorInfoMapper.EnrichAsync(paged, _authServiceClient);
+
+        var items = paged
             .Select(c => new CourseResponse(
                 c.Id,
                 c.Name,
@@ -47,7 +58,7 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
             ));
 
         return new PagedResponse<CourseResponse>(
-            paged,
+            items,
             request.PageNumber,
             request.PageSize,
             totalCount,
