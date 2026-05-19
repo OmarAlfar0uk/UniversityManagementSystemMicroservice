@@ -81,6 +81,7 @@ namespace AcademicService
                     policy
                         .WithOrigins(
                             "http://localhost:4200",
+                            "https://learnify-jqme.vercel.app",
                             "https://localhost:4200",
                             "https://learnify.tech",
                             "https://www.learnify.tech",

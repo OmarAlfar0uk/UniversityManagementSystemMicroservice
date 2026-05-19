@@ -96,6 +96,7 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "http://localhost:4200",
+                "https://learnify-jqme.vercel.app",
                 "https://localhost:4200",
                 "https://learnify.tech",
                 "https://www.learnify.tech",
@@ -166,5 +167,4 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
-
 
