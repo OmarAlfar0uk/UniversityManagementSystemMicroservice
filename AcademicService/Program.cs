@@ -104,7 +104,8 @@ namespace AcademicService
             builder.Services.AddHttpClient<IStudentDirectoryClient, AuthStudentDirectoryClient>();
             builder.Services.AddHttpClient("AuthService", client =>
             {
-                client.BaseAddress = new Uri(builder.Configuration["Services:AuthService"] ?? "http://authservice:8081");
+                client.BaseAddress = new Uri(
+                    builder.Configuration["ServiceEndpoints:AuthServiceBaseUrl"] ?? "http://authservice:80");
             });
             builder.Services.AddScoped<IAuthServiceClient, AuthServiceClient>();
 

@@ -1,31 +1,59 @@
 using AcademicService.Contracts;
+using AcademicService.Data;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace AcademicService.Features.Courses.GetCourseStudentsDetails;
 
 public class GetCourseStudentsDetailsHandler : IRequestHandler<GetCourseStudentsDetailsQuery, List<StudentDetailItem>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly AcademicDbContext _dbContext;
+    private readonly IAuthServiceClient _authServiceClient;
 
-    public GetCourseStudentsDetailsHandler(IUnitOfWork unitOfWork)
+    public GetCourseStudentsDetailsHandler(
+        AcademicDbContext dbContext,
+        IAuthServiceClient authServiceClient)
     {
-        _unitOfWork = unitOfWork;
+        _dbContext = dbContext;
+        _authServiceClient = authServiceClient;
     }
 
     public async Task<List<StudentDetailItem>> Handle(
         GetCourseStudentsDetailsQuery request,
         CancellationToken cancellationToken)
     {
-        var enrollments = await _unitOfWork.CourseEnrollments
-            .GetAllAsync(e => e.CourseId == request.CourseId);
+        var studentIds = await _dbContext.CourseEnrollments
+            .AsNoTracking()
+            .Where(e => e.CourseId == request.CourseId)
+            .Select(e => e.StudentId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
 
-        return enrollments.Select(e => new StudentDetailItem(
-            StudentId: e.StudentId,
-            FirstName: e.StudentFirstName ?? string.Empty,
-            FullName: e.StudentFullName ?? string.Empty,
-            MidtermGrade: null,   // cross-service
-            FinalGrade: null,     // cross-service
-            AttendedLecturesCount: 0  // cross-service
-        )).ToList();
+        var students = new List<StudentDetailItem>(studentIds.Count);
+        foreach (var studentId in studentIds)
+        {
+            var userInfo = await _authServiceClient.GetUserInfoAsync(studentId);
+            var fullName = userInfo?.FullName ?? string.Empty;
+            var firstName = userInfo?.FirstName ?? GetFirstName(fullName);
+
+            students.Add(new StudentDetailItem(
+                StudentId: studentId,
+                FirstName: firstName,
+                FullName: fullName,
+                MidtermGrade: null,
+                FinalGrade: null,
+                AttendedLecturesCount: 0
+            ));
+        }
+
+        return students;
+    }
+
+    private static string GetFirstName(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            return string.Empty;
+
+        return fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
     }
 }

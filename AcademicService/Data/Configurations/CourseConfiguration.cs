@@ -25,16 +25,16 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
             .HasMaxLength(500);
 
         builder.Property(c => c.DoctorFirstName)
-            .HasMaxLength(100)
-            .HasDefaultValue(string.Empty);
+            .IsRequired()
+            .HasMaxLength(100);
 
         builder.Property(c => c.DoctorFullName)
-            .HasMaxLength(200)
-            .HasDefaultValue(string.Empty);
+            .IsRequired()
+            .HasMaxLength(200);
 
         builder.Property(c => c.DoctorEmail)
-            .HasMaxLength(256)
-            .HasDefaultValue(string.Empty);
+            .IsRequired()
+            .HasMaxLength(256);
 
         builder.Property(c => c.DepartmentId);
 

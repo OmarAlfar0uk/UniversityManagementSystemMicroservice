@@ -1,30 +1,40 @@
 using AcademicService.Contracts;
+using AcademicService.Data;
+using AcademicService.Features.Courses;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace AcademicService.Features.Courses.GetAllCourses;
 
 public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedResponse<CourseResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly AcademicDbContext _dbContext;
     private readonly IImageHelper _imageHelper;
+    private readonly IAuthServiceClient _authServiceClient;
 
-    public GetAllCoursesHandler(IUnitOfWork unitOfWork, IImageHelper imageHelper)
+    public GetAllCoursesHandler(
+        IUnitOfWork unitOfWork,
+        AcademicDbContext dbContext,
+        IImageHelper imageHelper,
+        IAuthServiceClient authServiceClient)
     {
         _unitOfWork = unitOfWork;
+        _dbContext = dbContext;
         _imageHelper = imageHelper;
+        _authServiceClient = authServiceClient;
     }
 
     public async Task<PagedResponse<CourseResponse>> Handle(
         GetAllCoursesQuery request,
         CancellationToken cancellationToken)
     {
-        // Fetch enrollments for this student
-        var enrollments = await _unitOfWork.CourseEnrollments
-            .GetAllAsync(e => e.StudentId == request.StudentId);
+        var courseIds = await _dbContext.CourseEnrollments
+            .AsNoTracking()
+            .Where(e => e.StudentId == request.StudentId)
+            .Select(e => e.CourseId)
+            .ToListAsync(cancellationToken);
 
-        var courseIds = enrollments.Select(e => e.CourseId).ToList();
-
-        // Fetch all enrolled courses
         var allCourses = await _unitOfWork.Courses
             .GetAllAsync(c => courseIds.Contains(c.Id) && c.IsActive);
 
@@ -33,6 +43,11 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
         var paged = allCourses
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
+            .ToList();
+
+        await CourseDoctorInfoMapper.EnrichAsync(paged, _authServiceClient);
+
+        var items = paged
             .Select(c => new CourseResponse(
                 c.Id,
                 c.Name,
@@ -47,7 +62,7 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
             ));
 
         return new PagedResponse<CourseResponse>(
-            paged,
+            items,
             request.PageNumber,
             request.PageSize,
             totalCount,

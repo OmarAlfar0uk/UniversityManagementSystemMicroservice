@@ -55,13 +55,51 @@ namespace AcademicService.Services
                 var response = await _client.GetAsync($"/api/v1/auth/internal/users/{userId}");
                 if (!response.IsSuccessStatusCode) return null;
                 var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<UserInfoDto>(json, _jsonOptions);
+                var userInfo = DeserializeUserInfo(json);
+                if (userInfo is null) return null;
+
+                return new UserInfoDto
+                {
+                    Id = userInfo.Id == Guid.Empty ? userId : userInfo.Id,
+                    FirstName = string.IsNullOrWhiteSpace(userInfo.FirstName)
+                        ? GetFirstName(userInfo.FullName)
+                        : userInfo.FirstName,
+                    FullName = userInfo.FullName ?? string.Empty,
+                    Email = userInfo.Email ?? string.Empty,
+                    Role = userInfo.Role ?? string.Empty,
+                    ProfileImageUrl = userInfo.ProfileImageUrl,
+                    Department = userInfo.Department,
+                    DepartmentId = userInfo.DepartmentId
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "AuthService: GetUserInfoAsync failed for {UserId}", userId);
                 return null;
             }
+        }
+
+        private static UserInfoDto? DeserializeUserInfo(string json)
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+
+            if (root.ValueKind == JsonValueKind.Object &&
+                root.TryGetProperty("data", out var data) &&
+                data.ValueKind == JsonValueKind.Object)
+            {
+                return data.Deserialize<UserInfoDto>(_jsonOptions);
+            }
+
+            return root.Deserialize<UserInfoDto>(_jsonOptions);
+        }
+
+        private static string GetFirstName(string? fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                return string.Empty;
+
+            return fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
         }
     }
 }

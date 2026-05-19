@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using MessageService.Features.AI;
 using MessageService.Features.Messages;
+using MessageService.Services;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -67,7 +68,18 @@ builder.Services.AddHttpClient("Gemini", client =>
 {
     client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");
 });
-builder.Services.Configure<MessageService.Services.AiSettings>(builder.Configuration.GetSection("AiSettings"));
+builder.Services
+    .AddOptions<AiSettings>()
+    .Bind(builder.Configuration.GetSection("AiSettings"))
+    .PostConfigure(settings =>
+    {
+        settings.ApiKey = builder.Configuration["GEMINI_API_KEY"] ?? settings.ApiKey;
+    })
+    .Validate(settings => !string.IsNullOrWhiteSpace(settings.ApiKey),
+        "Gemini API key is missing. Set AiSettings__ApiKey or GEMINI_API_KEY.")
+    .Validate(settings => !string.IsNullOrWhiteSpace(settings.Model),
+        "Gemini model is missing. Set AiSettings__Model.")
+    .ValidateOnStart();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
@@ -167,4 +179,3 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
-

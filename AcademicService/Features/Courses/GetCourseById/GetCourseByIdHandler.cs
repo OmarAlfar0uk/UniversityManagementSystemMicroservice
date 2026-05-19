@@ -1,4 +1,5 @@
 using AcademicService.Contracts;
+using AcademicService.Features.Courses;
 using MediatR;
 
 namespace AcademicService.Features.Courses.GetCourseById;
@@ -7,11 +8,16 @@ public class GetCourseByIdHandler : IRequestHandler<GetCourseByIdQuery, CourseDe
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IImageHelper _imageHelper;
+    private readonly IAuthServiceClient _authServiceClient;
 
-    public GetCourseByIdHandler(IUnitOfWork unitOfWork, IImageHelper imageHelper)
+    public GetCourseByIdHandler(
+        IUnitOfWork unitOfWork,
+        IImageHelper imageHelper,
+        IAuthServiceClient authServiceClient)
     {
         _unitOfWork = unitOfWork;
         _imageHelper = imageHelper;
+        _authServiceClient = authServiceClient;
     }
 
     public async Task<CourseDetailsResponse> Handle(
@@ -21,6 +27,8 @@ public class GetCourseByIdHandler : IRequestHandler<GetCourseByIdQuery, CourseDe
         var course = await _unitOfWork.Courses.GetByIdAsync(request.CourseId);
         if (course is null)
             throw new KeyNotFoundException($"Course {request.CourseId} not found.");
+
+        await CourseDoctorInfoMapper.EnrichAsync(course, _authServiceClient);
 
         var lectures = await _unitOfWork.Lectures
             .GetAllAsync(l => l.CourseId == request.CourseId);

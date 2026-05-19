@@ -156,6 +156,7 @@ namespace Auth_Service
                     policy
                         .WithOrigins(
                             "http://localhost:4200",
+                            "http://localhost:55528",
                             "https://learnify-jqme.vercel.app",
                             "https://localhost:4200",
                             "https://learnify.tech",
@@ -165,6 +166,7 @@ namespace Auth_Service
                             "https://reporting.learnefy.tech",
                             "https://progress.learnefy.tech"
                         )
+                        .SetIsOriginAllowed(IsAllowedCorsOrigin)
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials();
@@ -297,6 +299,21 @@ namespace Auth_Service
 
 
             await app.RunAsync();
+        }
+
+        private static bool IsAllowedCorsOrigin(string origin)
+        {
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                return false;
+
+            return uri.Host is "localhost" or "127.0.0.1" ||
+                   origin is "https://learnify-jqme.vercel.app" or
+                       "https://learnify.tech" or
+                       "https://www.learnify.tech" or
+                       "https://academic.learnefy.tech" or
+                       "https://auth.learnefy.tech" or
+                       "https://reporting.learnefy.tech" or
+                       "https://progress.learnefy.tech";
         }
     }
 }

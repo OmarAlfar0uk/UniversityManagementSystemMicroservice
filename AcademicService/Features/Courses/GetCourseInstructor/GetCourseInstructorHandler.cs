@@ -37,7 +37,9 @@ public class GetCourseInstructorHandler : IRequestHandler<GetCourseInstructorQue
         var userInfo = await _authServiceClient.GetUserInfoAsync(course.DoctorId);
         if (userInfo is not null)
         {
-            firstName = userInfo.FirstName ?? string.Empty;
+            firstName = string.IsNullOrWhiteSpace(userInfo.FirstName)
+                ? GetFirstName(userInfo.FullName)
+                : userInfo.FirstName;
             fullName = userInfo.FullName ?? string.Empty;
             profileImage = userInfo.ProfileImageUrl;
             department = userInfo.Department;
@@ -51,5 +53,13 @@ public class GetCourseInstructorHandler : IRequestHandler<GetCourseInstructorQue
             profileImage,
             department
         );
+    }
+
+    private static string GetFirstName(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            return string.Empty;
+
+        return fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
     }
 }
