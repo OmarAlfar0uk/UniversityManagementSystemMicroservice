@@ -13,9 +13,13 @@
 # Local secrets
 .env
 .env.*
+*.env
 !.env.example
 appsettings.Local.json
 appsettings.*.Local.json
+**/appsettings.*.json
+!**/appsettings.json
+!**/appsettings.Development.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

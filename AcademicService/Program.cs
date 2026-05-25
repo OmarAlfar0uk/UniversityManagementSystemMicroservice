@@ -79,17 +79,17 @@ namespace AcademicService
                 options.AddPolicy("AllowAll", policy =>
                 {
                     policy
-                        .WithOrigins(
-                            "http://localhost:4200",
-                            "https://learnify-jqme.vercel.app",
-                            "https://localhost:4200",
-                            "https://learnify.tech",
-                            "https://www.learnify.tech",
-                            "https://academic.learnefy.tech",
-                            "https://auth.learnefy.tech",
-                            "https://reporting.learnefy.tech",
-                            "https://progress.learnefy.tech"
-                        )
+                        .SetIsOriginAllowed(origin =>
+                        {
+                            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                                return false;
+
+                            return uri.Host is "localhost" or "127.0.0.1" ||
+                                   uri.Host is "learnify.tech" or "www.learnify.tech" or "learnefy.tech" or "www.learnefy.tech" ||
+                                   uri.Host.EndsWith(".learnefy.tech", StringComparison.OrdinalIgnoreCase) ||
+                                   uri.Host.EndsWith(".learnify.tech", StringComparison.OrdinalIgnoreCase) ||
+                                   uri.Host.Equals("learnify-jqme.vercel.app", StringComparison.OrdinalIgnoreCase);
+                        })
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials();

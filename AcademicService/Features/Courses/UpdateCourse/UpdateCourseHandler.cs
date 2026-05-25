@@ -48,6 +48,8 @@ public class UpdateCourseHandler : IRequestHandler<UpdateCourseCommand, CourseRe
         _unitOfWork.Courses.Update(course);
         await _unitOfWork.SaveChangesAsync();
 
+        await CourseDoctorInfoMapper.EnrichAsync(course, _authServiceClient);
+
         return new CourseResponse(
             course.Id,
             course.Name,

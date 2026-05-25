@@ -45,17 +45,12 @@ public class SubmitAssignmentFileHandler : IRequestHandler<SubmitAssignmentFileC
             throw new ConflictException("Assignment already submitted.");
 
         var relativePath = await _fileHelper.SaveFileAsync(request.File, "Assignments");
-        var enrollment = await _unitOfWork.CourseEnrollments.FindAsync(
-            e => e.CourseId == assignment.CourseId && e.StudentId == request.StudentId);
 
         var submission = new AssignmentSubmission
         {
             Id = Guid.NewGuid(),
             AssignmentId = assignment.Id,
             StudentId = request.StudentId,
-            StudentFirstName = enrollment?.StudentFirstName ?? string.Empty,
-            StudentFullName = enrollment?.StudentFullName ?? string.Empty,
-            StudentEmail = enrollment?.StudentEmail ?? string.Empty,
             FileUrl = relativePath,
             SubmittedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,

@@ -154,18 +154,6 @@ namespace Auth_Service
                 options.AddPolicy("AllowAll", policy =>
                 {
                     policy
-                        .WithOrigins(
-                            "http://localhost:4200",
-                            "http://localhost:55528",
-                            "https://learnify-jqme.vercel.app",
-                            "https://localhost:4200",
-                            "https://learnify.tech",
-                            "https://www.learnify.tech",
-                            "https://academic.learnefy.tech",
-                            "https://auth.learnefy.tech",
-                            "https://reporting.learnefy.tech",
-                            "https://progress.learnefy.tech"
-                        )
                         .SetIsOriginAllowed(IsAllowedCorsOrigin)
                         .AllowAnyMethod()
                         .AllowAnyHeader()
@@ -307,13 +295,10 @@ namespace Auth_Service
                 return false;
 
             return uri.Host is "localhost" or "127.0.0.1" ||
-                   origin is "https://learnify-jqme.vercel.app" or
-                       "https://learnify.tech" or
-                       "https://www.learnify.tech" or
-                       "https://academic.learnefy.tech" or
-                       "https://auth.learnefy.tech" or
-                       "https://reporting.learnefy.tech" or
-                       "https://progress.learnefy.tech";
+                   uri.Host is "learnify.tech" or "www.learnify.tech" or "learnefy.tech" or "www.learnefy.tech" ||
+                   uri.Host.EndsWith(".learnefy.tech", StringComparison.OrdinalIgnoreCase) ||
+                   uri.Host.EndsWith(".learnify.tech", StringComparison.OrdinalIgnoreCase) ||
+                   uri.Host.Equals("learnify-jqme.vercel.app", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

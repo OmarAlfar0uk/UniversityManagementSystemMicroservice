@@ -48,6 +48,8 @@ public class CreateCourseHandler : IRequestHandler<CreateCourseCommand, CourseRe
         await _unitOfWork.Courses.AddAsync(course);
         await _unitOfWork.SaveChangesAsync();
 
+        await CourseDoctorInfoMapper.EnrichAsync(course, _authServiceClient);
+
         return new CourseResponse(
             course.Id,
             course.Name,

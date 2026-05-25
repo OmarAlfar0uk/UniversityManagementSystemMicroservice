@@ -14,10 +14,6 @@ public class CourseEnrollmentConfiguration : IEntityTypeConfiguration<CourseEnro
 
         builder.ToTable("CourseEnrollments");
 
-        builder.Ignore(e => e.StudentFirstName);
-        builder.Ignore(e => e.StudentFullName);
-        builder.Ignore(e => e.StudentEmail);
-
         builder.Property(e => e.CreatedAt)
             .HasDefaultValueSql("GETUTCDATE()");
 

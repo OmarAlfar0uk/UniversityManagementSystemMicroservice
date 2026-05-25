@@ -73,10 +73,12 @@ builder.Services
     .Bind(builder.Configuration.GetSection("AiSettings"))
     .PostConfigure(settings =>
     {
-        settings.ApiKey = builder.Configuration["GEMINI_API_KEY"] ?? settings.ApiKey;
+        settings.ApiKey = builder.Configuration["GeminiSettings:ApiKey"]
+            ?? builder.Configuration["GEMINI_API_KEY"]
+            ?? settings.ApiKey;
     })
     .Validate(settings => !string.IsNullOrWhiteSpace(settings.ApiKey),
-        "Gemini API key is missing. Set AiSettings__ApiKey or GEMINI_API_KEY.")
+        "Gemini API key is missing. Set GeminiSettings__ApiKey or GEMINI_API_KEY.")
     .Validate(settings => !string.IsNullOrWhiteSpace(settings.Model),
         "Gemini model is missing. Set AiSettings__Model.")
     .ValidateOnStart();
@@ -106,17 +108,17 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:4200",
-                "https://learnify-jqme.vercel.app",
-                "https://localhost:4200",
-                "https://learnify.tech",
-                "https://www.learnify.tech",
-                "https://academic.learnefy.tech",
-                "https://auth.learnefy.tech",
-                "https://reporting.learnefy.tech",
-                "https://progress.learnefy.tech"
-            )
+            .SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                    return false;
+
+                return uri.Host is "localhost" or "127.0.0.1" ||
+                       uri.Host is "learnify.tech" or "www.learnify.tech" or "learnefy.tech" or "www.learnefy.tech" ||
+                       uri.Host.EndsWith(".learnefy.tech", StringComparison.OrdinalIgnoreCase) ||
+                       uri.Host.EndsWith(".learnify.tech", StringComparison.OrdinalIgnoreCase) ||
+                       uri.Host.Equals("learnify-jqme.vercel.app", StringComparison.OrdinalIgnoreCase);
+            })
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();

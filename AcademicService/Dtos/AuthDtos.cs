@@ -8,6 +8,7 @@ namespace AcademicService.Dtos
         public string? Email { get; init; }
         public string? Role { get; init; }
         public string? ProfileImageUrl { get; init; }
+        public string? PhoneNumber { get; init; }
         public string? Department { get; init; }
         public Guid? DepartmentId { get; init; }
     }

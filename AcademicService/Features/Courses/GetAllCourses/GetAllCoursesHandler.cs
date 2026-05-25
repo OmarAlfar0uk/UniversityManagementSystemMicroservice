@@ -1,26 +1,21 @@
 using AcademicService.Contracts;
-using AcademicService.Data;
 using AcademicService.Features.Courses;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace AcademicService.Features.Courses.GetAllCourses;
 
 public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedResponse<CourseResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly AcademicDbContext _dbContext;
     private readonly IImageHelper _imageHelper;
     private readonly IAuthServiceClient _authServiceClient;
 
     public GetAllCoursesHandler(
         IUnitOfWork unitOfWork,
-        AcademicDbContext dbContext,
         IImageHelper imageHelper,
         IAuthServiceClient authServiceClient)
     {
         _unitOfWork = unitOfWork;
-        _dbContext = dbContext;
         _imageHelper = imageHelper;
         _authServiceClient = authServiceClient;
     }
@@ -29,12 +24,13 @@ public class GetAllCoursesHandler : IRequestHandler<GetAllCoursesQuery, PagedRes
         GetAllCoursesQuery request,
         CancellationToken cancellationToken)
     {
-        var courseIds = await _dbContext.CourseEnrollments
-            .AsNoTracking()
-            .Where(e => e.StudentId == request.StudentId)
-            .Select(e => e.CourseId)
-            .ToListAsync(cancellationToken);
+        // Fetch enrollments for this student
+        var enrollments = await _unitOfWork.CourseEnrollments
+            .GetAllAsync(e => e.StudentId == request.StudentId);
 
+        var courseIds = enrollments.Select(e => e.CourseId).ToList();
+
+        // Fetch all enrolled courses
         var allCourses = await _unitOfWork.Courses
             .GetAllAsync(c => courseIds.Contains(c.Id) && c.IsActive);
 

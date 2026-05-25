@@ -17,10 +17,6 @@ public class AssignmentSubmissionConfiguration : IEntityTypeConfiguration<Assign
         builder.Property(s => s.FileUrl)
             .HasMaxLength(500);
 
-        builder.Ignore(s => s.StudentFirstName);
-        builder.Ignore(s => s.StudentFullName);
-        builder.Ignore(s => s.StudentEmail);
-
         builder.Property(s => s.ProjectUrl)
             .HasMaxLength(500);
 
