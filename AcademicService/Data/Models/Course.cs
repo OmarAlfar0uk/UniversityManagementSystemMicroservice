@@ -1,5 +1,7 @@
 namespace AcademicService.Data.Models;
 
+using System.ComponentModel.DataAnnotations.Schema;
+
 public class Course
 {
     public Guid Id { get; set; }
@@ -7,8 +9,11 @@ public class Course
     public string? Description { get; set; }
     public string? CoverImageUrl { get; set; }
     public Guid DoctorId { get; set; }
+    [NotMapped]
     public string DoctorFirstName { get; set; } = string.Empty;
+    [NotMapped]
     public string DoctorFullName { get; set; } = string.Empty;
+    [NotMapped]
     public string DoctorEmail { get; set; } = string.Empty;
     public Guid? DepartmentId { get; set; }
     public Guid? CourseCatalogId { get; set; }
