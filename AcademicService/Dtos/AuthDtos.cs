@@ -2,14 +2,14 @@ namespace AcademicService.Dtos
 {
     public sealed class UserInfoDto
     {
-        public Guid Id { get; init; }
-        public string? FirstName { get; init; }
-        public string? FullName { get; init; }
-        public string? Email { get; init; }
-        public string? Role { get; init; }
-        public string? ProfileImageUrl { get; init; }
-        public string? PhoneNumber { get; init; }
-        public string? Department { get; init; }
-        public Guid? DepartmentId { get; init; }
+        public Guid Id { get; set; }
+        public string? FirstName { get; set; }
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
+        public string? Role { get; set; }
+        public string? ProfileImageUrl { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Department { get; set; }
+        public Guid? DepartmentId { get; set; }
     }
 }

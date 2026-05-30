@@ -43,7 +43,7 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(c => c.Enrollments)
-            .WithOne(e => e.Course)
+            .WithOne()
             .HasForeignKey(e => e.CourseId)
             .OnDelete(DeleteBehavior.Cascade);
 

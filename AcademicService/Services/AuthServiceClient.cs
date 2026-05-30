@@ -64,10 +64,11 @@ namespace AcademicService.Services
                     FirstName = string.IsNullOrWhiteSpace(userInfo.FirstName)
                         ? GetFirstName(userInfo.FullName)
                         : userInfo.FirstName,
-                    FullName = userInfo.FullName ?? string.Empty,
-                    Email = userInfo.Email ?? string.Empty,
-                    Role = userInfo.Role ?? string.Empty,
+                    FullName = userInfo.FullName,
+                    Email = userInfo.Email,
+                    Role = userInfo.Role,
                     ProfileImageUrl = userInfo.ProfileImageUrl,
+                    PhoneNumber = userInfo.PhoneNumber,
                     Department = userInfo.Department,
                     DepartmentId = userInfo.DepartmentId
                 };

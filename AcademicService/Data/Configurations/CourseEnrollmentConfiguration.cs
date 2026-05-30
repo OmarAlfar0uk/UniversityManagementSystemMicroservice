@@ -20,9 +20,6 @@ public class CourseEnrollmentConfiguration : IEntityTypeConfiguration<CourseEnro
         builder.Property(e => e.UpdatedAt)
             .HasDefaultValueSql("GETUTCDATE()");
 
-        builder.HasOne(e => e.Course)
-            .WithMany(c => c.Enrollments)
-            .HasForeignKey(e => e.CourseId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(e => e.CourseId);
     }
 }

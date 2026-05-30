@@ -29,9 +29,12 @@ public class GetCourseInstructorHandler : IRequestHandler<GetCourseInstructorQue
         return new InstructorResponse(
             DoctorId: course.DoctorId,
             CourseId: course.Id,
-            FullName: userInfo?.FullName ?? course.DoctorFullName,
-            Email: userInfo?.Email ?? course.DoctorEmail,
-            ProfileImageUrl: userInfo?.ProfileImageUrl
+            FullName: NullIfWhiteSpace(userInfo?.FullName),
+            Email: NullIfWhiteSpace(userInfo?.Email),
+            ProfileImageUrl: NullIfWhiteSpace(userInfo?.ProfileImageUrl)
         );
     }
+
+    private static string? NullIfWhiteSpace(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 }
