@@ -58,7 +58,11 @@ namespace AuthService.Features.Auth.Parent.ActivateParent
                 UserName = request.Email,
                 Email = request.Email,
                 EmailConfirmed = true,
-                IsActivated = true
+                IsActivated = true,
+                
+                FirstName      = request.FirstName, 
+                LastName       = request.LastName,   
+                UniversityId   = string.Empty    
             };
 
             var createResult =
