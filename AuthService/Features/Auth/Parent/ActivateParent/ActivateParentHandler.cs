@@ -31,53 +31,114 @@ namespace AuthService.Features.Auth.Parent.ActivateParent
         {
             
             var parentCode = await _context.ParentCodes
-                .FirstOrDefaultAsync(x =>
-                    x.Code == request.Code &&
-                    !x.IsUsed &&
-                    x.ExpiryDate > DateTime.UtcNow,
-                    cancellationToken);
+                .FirstOrDefaultAsync(x => x.Code == request.Code && !x.IsUsed, cancellationToken);
 
             if (parentCode == null)
             {
                 return EndpointResponse<ActivateParentResponse>.NotFoundResponse(
-                    "Invalid or expired parent code");
+                    "Invalid activation code.");
+            }
+
+            if (parentCode.ExpiryDate <= DateTime.UtcNow)
+            {
+                return EndpointResponse<ActivateParentResponse>.ErrorResponse(
+                    "Activation code has expired. Please request a new one.",
+                    400
+                );
             }
 
             var existingUser = await _userManager.FindByEmailAsync(request.Email);
+
+            ApplicationUser parentUser;
+
             if (existingUser != null)
             {
-                return EndpointResponse<ActivateParentResponse>.ErrorResponse(
-                    "Account already exists",
-                    409
-                );
+                if (existingUser.IsActivated)
+                {
+                    return EndpointResponse<ActivateParentResponse>.ErrorResponse(
+                        "User already activated.",
+                        409
+                    );
+                }
+
+                parentUser = existingUser;
+                parentUser.FirstName = request.FirstName;
+                parentUser.LastName = request.LastName;
+                parentUser.EmailConfirmed = true;
+                parentUser.IsActivated = true;
+
+                if (string.IsNullOrWhiteSpace(parentUser.UniversityId))
+                {
+                    string generatedUniversityId() => "PAR-" + Guid.NewGuid().ToString("N")[..10];
+
+                    var newUniversityId = generatedUniversityId();
+                    while (await _userManager.Users.AnyAsync(u => u.UniversityId == newUniversityId, cancellationToken))
+                    {
+                        newUniversityId = generatedUniversityId();
+                    }
+
+                    parentUser.UniversityId = newUniversityId;
+                }
+
+                var updateResult = await _userManager.UpdateAsync(parentUser);
+                if (!updateResult.Succeeded)
+                {
+                    return EndpointResponse<ActivateParentResponse>.ErrorResponse(
+                        "Failed to update parent account",
+                        400,
+                        updateResult.Errors.Select(e => e.Description).ToList()
+                    );
+                }
+
+                if (!await _userManager.HasPasswordAsync(parentUser))
+                {
+                    var addPasswordResult = await _userManager.AddPasswordAsync(parentUser, request.Password);
+                    if (!addPasswordResult.Succeeded)
+                    {
+                        return EndpointResponse<ActivateParentResponse>.ErrorResponse(
+                            "Failed to set password for existing account",
+                            400,
+                            addPasswordResult.Errors.Select(e => e.Description).ToList()
+                        );
+                    }
+                }
+
+                await _userManager.AddToRoleAsync(parentUser, "Parent");
             }
-
-            var parentUser = new ApplicationUser
+            else
             {
-                Id = Guid.NewGuid(),
-                UserName = request.Email,
-                Email = request.Email,
-                EmailConfirmed = true,
-                IsActivated = true,
-                
-                FirstName      = request.FirstName, 
-                LastName       = request.LastName,   
-                UniversityId   = string.Empty    
-            };
+                string generatedUniversityId() => "PAR-" + Guid.NewGuid().ToString("N")[..10];
 
-            var createResult =
-                await _userManager.CreateAsync(parentUser, request.Password);
+                var newUniversityId = generatedUniversityId();
+                while (await _userManager.Users.AnyAsync(u => u.UniversityId == newUniversityId, cancellationToken))
+                {
+                    newUniversityId = generatedUniversityId();
+                }
 
-            if (!createResult.Succeeded)
-            {
-                return EndpointResponse<ActivateParentResponse>.ErrorResponse(
-                    "Failed to create parent account",
-                    400,
-                    createResult.Errors.Select(e => e.Description).ToList()
-                );
+                parentUser = new ApplicationUser
+                {
+                    Id = Guid.NewGuid(),
+                    UserName = request.Email,
+                    Email = request.Email,
+                    EmailConfirmed = true,
+                    IsActivated = true,
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    UniversityId = newUniversityId
+                };
+
+                var createResult = await _userManager.CreateAsync(parentUser, request.Password);
+                if (!createResult.Succeeded)
+                {
+                    return EndpointResponse<ActivateParentResponse>.ErrorResponse(
+                        "Failed to create parent account",
+                        400,
+                        createResult.Errors.Select(e => e.Description).ToList()
+                    );
+                }
+
+                await _userManager.AddToRoleAsync(parentUser, "Parent");
             }
-
-            await _userManager.AddToRoleAsync(parentUser, "Parent");
 
             var link = new ParentStudent
             {

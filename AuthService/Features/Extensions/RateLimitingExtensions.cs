@@ -1,4 +1,5 @@
 ﻿using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Http;
 
 namespace AuthService.Features.Extensions
 {
@@ -69,8 +70,21 @@ namespace AuthService.Features.Extensions
                         });
                 });
 
-                options.RejectionStatusCode =
-                    StatusCodes.Status429TooManyRequests;
+                options.OnRejected = async (context, token) =>
+                {
+                    context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                    context.HttpContext.Response.Headers["Retry-After"] = "60";
+
+                    var body = new
+                    {
+                        message = "Too many requests. Please try again after 60 seconds.",
+                        retryAfter = 60
+                    };
+
+                    await context.HttpContext.Response.WriteAsJsonAsync(body, token);
+                };
+
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             });
 
             return services;
