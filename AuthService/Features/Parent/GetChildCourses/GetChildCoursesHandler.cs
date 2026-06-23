@@ -121,9 +121,8 @@ namespace AuthService.Features.Parent.GetChildCourses
 
                 if (!resp.IsSuccessStatusCode) return [];
 
-                var json   = await resp.Content.ReadAsStringAsync(ct);
-                var parsed = JsonSerializer.Deserialize<AcademicCoursesWrapper>(json, _jsonOptions);
-                return parsed?.Data ?? [];
+                var json = await resp.Content.ReadAsStringAsync(ct);
+                return JsonSerializer.Deserialize<List<AcademicCourseDto>>(json, _jsonOptions) ?? [];
             }
             catch { return []; }
         }
@@ -138,9 +137,8 @@ namespace AuthService.Features.Parent.GetChildCourses
 
                 if (!resp.IsSuccessStatusCode) return [];
 
-                var json   = await resp.Content.ReadAsStringAsync(ct);
-                var parsed = JsonSerializer.Deserialize<GradesWrapper>(json, _jsonOptions);
-                return parsed?.Data ?? [];
+                var json = await resp.Content.ReadAsStringAsync(ct);
+                return JsonSerializer.Deserialize<List<GradeDto>>(json, _jsonOptions) ?? [];
             }
             catch { return []; }
         }
@@ -169,22 +167,12 @@ namespace AuthService.Features.Parent.GetChildCourses
 
         // ── Internal DTOs ─────────────────────────────────────────────────────
 
-        private sealed class AcademicCoursesWrapper
-        {
-            public List<AcademicCourseDto>? Data { get; set; }
-        }
-
         private sealed class AcademicCourseDto
         {
             public Guid    CourseId      { get; set; }
             public string  CourseName    { get; set; } = string.Empty;
             public string? CoverImageUrl { get; set; }
             public Guid    DoctorId      { get; set; }
-        }
-
-        private sealed class GradesWrapper
-        {
-            public List<GradeDto>? Data { get; set; }
         }
 
         private sealed class GradeDto

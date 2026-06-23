@@ -72,10 +72,10 @@ namespace AuthService.Features.Parent.GetChildSchedule
                 if (httpResponse.IsSuccessStatusCode)
                 {
                     var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
-                    var parsed = JsonSerializer.Deserialize<AcademicScheduleWrapper>(json, _jsonOptions);
-                    if (parsed?.Data is not null)
+                    var list = JsonSerializer.Deserialize<List<AcademicScheduleDto>>(json, _jsonOptions);
+                    if (list is not null)
                     {
-                        schedules = parsed.Data
+                        schedules = list
                             .Select(s => new ScheduleItem(
                                 Id:           s.Id,
                                 ImageUrl:     s.ImageUrl ?? string.Empty,
@@ -115,11 +115,6 @@ namespace AuthService.Features.Parent.GetChildSchedule
         }
 
         // ── Internal DTOs for deserializing AcademicService response ─────────
-
-        private sealed class AcademicScheduleWrapper
-        {
-            public List<AcademicScheduleDto>? Data { get; set; }
-        }
 
         private sealed class AcademicScheduleDto
         {

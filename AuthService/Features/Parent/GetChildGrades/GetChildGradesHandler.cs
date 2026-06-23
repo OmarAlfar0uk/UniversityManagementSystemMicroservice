@@ -111,9 +111,8 @@ namespace AuthService.Features.Parent.GetChildGrades
 
                 if (!resp.IsSuccessStatusCode) return [];
 
-                var json   = await resp.Content.ReadAsStringAsync(ct);
-                var parsed = JsonSerializer.Deserialize<GradesWrapper>(json, _jsonOptions);
-                return parsed?.Data ?? [];
+                var json = await resp.Content.ReadAsStringAsync(ct);
+                return JsonSerializer.Deserialize<List<GradeDto>>(json, _jsonOptions) ?? [];
             }
             catch { return []; }
         }
@@ -128,9 +127,8 @@ namespace AuthService.Features.Parent.GetChildGrades
 
                 if (!resp.IsSuccessStatusCode) return null;
 
-                var json   = await resp.Content.ReadAsStringAsync(ct);
-                var parsed = JsonSerializer.Deserialize<GpaWrapper>(json, _jsonOptions);
-                return parsed?.Data;
+                var json = await resp.Content.ReadAsStringAsync(ct);
+                return JsonSerializer.Deserialize<double?>(json, _jsonOptions);
             }
             catch { return null; }
         }
@@ -145,11 +143,9 @@ namespace AuthService.Features.Parent.GetChildGrades
 
                 if (!resp.IsSuccessStatusCode) return [];
 
-                var json   = await resp.Content.ReadAsStringAsync(ct);
-                var parsed = JsonSerializer.Deserialize<AcademicCoursesWrapper>(json, _jsonOptions);
-                return parsed?.Data?
-                    .ToDictionary(c => c.CourseId, c => c.CourseName)
-                    ?? [];
+                var json = await resp.Content.ReadAsStringAsync(ct);
+                var list = JsonSerializer.Deserialize<List<AcademicCourseDto>>(json, _jsonOptions) ?? [];
+                return list.ToDictionary(c => c.CourseId, c => c.CourseName);
             }
             catch { return []; }
         }
@@ -189,27 +185,12 @@ namespace AuthService.Features.Parent.GetChildGrades
 
         // ── Internal DTOs ─────────────────────────────────────────────────────
 
-        private sealed class GradesWrapper
-        {
-            public List<GradeDto>? Data { get; set; }
-        }
-
         private sealed class GradeDto
         {
             public Guid     CourseId     { get; set; }
             public decimal? MidtermScore { get; set; }
             public decimal? FinalScore   { get; set; }
             public decimal? TotalScore   { get; set; }
-        }
-
-        private sealed class GpaWrapper
-        {
-            public double? Data { get; set; }
-        }
-
-        private sealed class AcademicCoursesWrapper
-        {
-            public List<AcademicCourseDto>? Data { get; set; }
         }
 
         private sealed class AcademicCourseDto
