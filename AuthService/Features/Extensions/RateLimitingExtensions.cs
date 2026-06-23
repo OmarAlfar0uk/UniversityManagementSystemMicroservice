@@ -1,4 +1,4 @@
-﻿using System.Threading.RateLimiting;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Http;
 
 namespace AuthService.Features.Extensions
@@ -53,22 +53,6 @@ namespace AuthService.Features.Extensions
                         });
                 });
 
-                options.AddPolicy("parent-generate", context =>
-                {
-                    var userId =
-                        context.User?.FindFirst("id")?.Value ??
-                        context.Connection.RemoteIpAddress?.ToString() ??
-                        "unknown";
-
-                    return RateLimitPartition.GetFixedWindowLimiter(
-                        userId,
-                        _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = 2,
-                            Window = TimeSpan.FromHours(1),
-                            QueueLimit = 0
-                        });
-                });
 
                 options.OnRejected = async (context, token) =>
                 {

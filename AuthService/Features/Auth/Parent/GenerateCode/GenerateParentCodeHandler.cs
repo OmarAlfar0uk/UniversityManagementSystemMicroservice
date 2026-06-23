@@ -1,4 +1,4 @@
-﻿using Auth_Service.Features.Shared;
+using Auth_Service.Features.Shared;
 using AuthService.Contracts;
 using AuthService.Data;
 using AuthService.Models;
@@ -39,18 +39,14 @@ namespace AuthService.Features.Auth.Parent.GenerateCode
 
             var studentId = Guid.Parse(userIdClaim);
 
-            var hasActiveCode = await _context.ParentCodes.AnyAsync(
-                x => x.StudentId == studentId &&
-                     !x.IsUsed &&
-                     x.ExpiryDate > DateTime.UtcNow,
-                cancellationToken);
+            // Invalidate all existing active (unused & non-expired) codes for this student
+            var existingActiveCodes = await _context.ParentCodes
+                .Where(x => x.StudentId == studentId && !x.IsUsed && x.ExpiryDate > DateTime.UtcNow)
+                .ToListAsync(cancellationToken);
 
-            if (hasActiveCode)
+            foreach (var oldCode in existingActiveCodes)
             {
-                return EndpointResponse<GenerateParentCodeResponse>.ErrorResponse(
-                    "You already have an active parent code",
-                    409
-                );
+                oldCode.IsUsed = true;
             }
 
             var code = Random.Shared.Next(100000, 999999).ToString();

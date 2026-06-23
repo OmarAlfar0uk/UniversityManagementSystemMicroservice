@@ -28,9 +28,8 @@ namespace AuthService.Features.Auth.Parent
             group.MapPost("/generate-code", GenerateParentCode)
                  .RequireAuthorization()
                  .RequireAuthorization(policy => policy.RequireRole("Student"))
-                 .RequireRateLimiting("parent-generate")
                  .WithSummary("Generate a Parent invitation code")
-                 .WithDescription("Student generates a one-time code their parent uses to register.");
+                 .WithDescription("Student generates a one-time code their parent uses to register. Any previous unused code is automatically invalidated.");
 
             // GET /api/v1/auth/parent/children  → Parent only
             group.MapGet("/children", GetParentChildren)
