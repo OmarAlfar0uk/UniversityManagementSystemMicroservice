@@ -11,6 +11,7 @@ using AuthService.Features.Auth;
 using AuthService.Features.Internal;
 using AuthService.Features.Auth.Admin;
 using AuthService.Features.Auth.Parent;
+using AuthService.Features.Parent;
 using AuthService.Features.Auth.Student;
 using AuthService.Features.Extensions;
 using AuthService.Seeding;
@@ -179,6 +180,15 @@ namespace Auth_Service
                 client.BaseAddress = new Uri(academicServiceUrl);
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
+
+            var gradeServiceUrl =
+                builder.Configuration["ServiceUrls:Grade"] ??
+                "http://gradeservice";
+            builder.Services.AddHttpClient("GradeService", client =>
+            {
+                client.BaseAddress = new Uri(gradeServiceUrl);
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
             builder.Services.AddScoped<IAcademicServiceClient, AcademicServiceClient>();
             builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
             builder.Services.AddTransient(
@@ -283,6 +293,7 @@ namespace Auth_Service
             app.MapParentAuthEndpoints();
             app.MapStudentAuthEndpoints();
             app.MapInternalEndpoints();
+            app.MapParentChildEndpoints();
             #endregion
 
 
