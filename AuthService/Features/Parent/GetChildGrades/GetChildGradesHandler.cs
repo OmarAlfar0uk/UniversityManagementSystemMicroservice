@@ -145,7 +145,7 @@ namespace AuthService.Features.Parent.GetChildGrades
 
                 var json = await resp.Content.ReadAsStringAsync(ct);
                 var list = JsonSerializer.Deserialize<List<AcademicCourseDto>>(json, _jsonOptions) ?? [];
-                return list.ToDictionary(c => c.CourseId, c => c.CourseName);
+                return list.ToDictionary(c => c.Id, c => c.Name);
             }
             catch { return []; }
         }
@@ -195,8 +195,8 @@ namespace AuthService.Features.Parent.GetChildGrades
 
         private sealed class AcademicCourseDto
         {
-            public Guid   CourseId   { get; set; }
-            public string CourseName { get; set; } = string.Empty;
+            public Guid   Id   { get; set; }
+            public string Name { get; set; } = string.Empty;
         }
     }
 }

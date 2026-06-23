@@ -65,12 +65,14 @@ namespace AuthService.Features.Parent.GetChildCourses
             // 3. Combine
             var courseItems = courses.Select(c =>
             {
-                gradeMap.TryGetValue(c.CourseId, out var grade);
+                gradeMap.TryGetValue(c.Id, out var grade);
                 var total = grade?.TotalScore;
                 return new ChildCourseItem(
-                    CourseId:         c.CourseId,
-                    CourseName:       c.CourseName,
-                    CoverImageUrl:    c.CoverImageUrl,
+                    CourseId:         c.Id,
+                    CourseName:       c.Name,
+                    CoverImageUrl:    c.CoverImageUrl?
+                        .Replace("http://localhost:5002", "https://academic.learnefy.tech")
+                        .Replace("http://academicservice", "https://academic.learnefy.tech"),
                     DoctorId:         c.DoctorId,
                     MidtermScore:     grade?.MidtermScore,
                     FinalScore:       grade?.FinalScore,
@@ -169,10 +171,11 @@ namespace AuthService.Features.Parent.GetChildCourses
 
         private sealed class AcademicCourseDto
         {
-            public Guid    CourseId      { get; set; }
-            public string  CourseName    { get; set; } = string.Empty;
+            public Guid    Id            { get; set; }
+            public string  Name          { get; set; } = string.Empty;
             public string? CoverImageUrl { get; set; }
             public Guid    DoctorId      { get; set; }
+            public int     EnrolledCount { get; set; }
         }
 
         private sealed class GradeDto
