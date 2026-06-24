@@ -89,6 +89,15 @@ namespace GradeService
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
 
+            var academicServiceUrl =
+                builder.Configuration["Services:AcademicService"] ??
+                "http://academicservice";
+            builder.Services.AddHttpClient("AcademicService", client =>
+            {
+                client.BaseAddress = new Uri(academicServiceUrl);
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
+
             #region MediatR & Validation
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
             builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
