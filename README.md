@@ -123,14 +123,10 @@ flowchart TD
    cd UniversityManagementSystemMicroservice
    ```
 
-2. **Configure Microservices:**
-   Each service contains an `appsettings.json` file configured with a connection string placeholder:
-   ```json
-   {
-     "ConnectionStrings": {
-       "DefaultConnection": "Server=localhost;Database=AcademicDb;Trusted_Connection=True;TrustServerCertificate=True;"
-     }
-   }
+2. **Restore Dependencies & Build:**
+   ```bash
+   dotnet restore
+   dotnet build
    ```
 
 3. **Run Services Simultaneously:**
